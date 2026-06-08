@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Performance — adthena.com · UK · Last 30 days</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ds-components.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── PAGE LAYOUT ── */
+    .page-shell {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 50;
+    }
+    .page-content {
+      padding: 74px 24px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* service-bar styles come from ds-components.css */
+
+    /* ── GRID LAYOUTS ── */
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+    /* ── KPI CARD width override (grid context) ── */
+    .grid-4 .kpi-card { width: auto; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg-paper);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 0;
+    }
+
+    /* ── CARD HEADER ── */
+    .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .card-header__icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #93a1b6;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-header__icon svg { width: 16px; height: 16px; color: #fff; }
+    .card-header__titles { flex: 1; }
+    .card-header__title { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.87); line-height: 1.15; }
+    .card-header__sub { font-size: 12px; color: #6b6b6b; margin-top: 1px; }
+    .card-header__actions { display: flex; gap: 6px; align-items: center; }
+    .icon-btn-sm {
+      width: 24px; height: 24px; border-radius: 6px; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+      color: #6477a2; transition: background 0.15s;
+    }
+    .icon-btn-sm:hover { background: #f0f4fa; }
+    .icon-btn-sm svg { width: 14px; height: 14px; }
+
+    /* ── CHART CONTAINER ── */
+    .chart-wrap { position: relative; width: 100%; }
+
+    /* ── TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      font-size: 11px; font-weight: 700; color: #485982;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 0 12px 10px; text-align: left;
+      border-bottom: 1px solid #eaeff5;
+    }
+    .data-table th.right, .data-table td.right { text-align: right; }
+    .data-table td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #f0f4fa; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #fafcff; }
+    .domain-cell { display: flex; align-items: center; gap: 8px; }
+    .favicon { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; }
+    .domain-name { font-size: 13px; font-weight: 600; color: #27365b; }
+    .you-badge {
+      font-size: 9px; font-weight: 700; color: #1565c0;
+      background: #e9f4ff; padding: 1px 6px; border-radius: var(--radius-full);
+    }
+    .score-bar { display: flex; align-items: center; gap: 8px; }
+    .score-bg { flex: 1; height: 5px; background: #eaeff5; border-radius: var(--radius-full); overflow: hidden; }
+    .score-fill { height: 100%; border-radius: var(--radius-full); }
+    .score-fill--strong { background: #40af46; }
+    .score-fill--mid    { background: #3589e9; }
+    .score-fill--low    { background: #e06500; }
+    .score-num { font-size: 12px; font-weight: 600; color: #27365b; width: 32px; text-align: right; }
+    .pos-chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 32px; height: 20px; border-radius: 10px; padding: 0 6px;
+      font-size: 11px; font-weight: 600;
+    }
+    .pos-chip--good { background: #daf1db; color: #2e7d32; }
+    .pos-chip--mid  { background: #fff3e0; color: #e65100; }
+    .pos-chip--bad  { background: #fce4e4; color: #de5a5a; }
+    .freq-num { font-size: 13px; font-weight: 600; color: #27365b; }
+
+    /* ── HEALTH PILLS ── */
+    .health-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .health-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; padding: 14px 8px; border-radius: var(--radius-xl);
+    }
+    .health-item--strong    { background: #daf1db; }
+    .health-item--attention { background: #fff8e6; }
+    .health-item--risk      { background: #fce4e4; }
+    .health-item__count { font-size: 32px; font-weight: 300; letter-spacing: -2px; line-height: 1; }
+    .health-item--strong    .health-item__count { color: #2e7d32; }
+    .health-item--attention .health-item__count { color: #9a6700; }
+    .health-item--risk      .health-item__count { color: #de5a5a; }
+    .health-item__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .health-item--strong    .health-item__label { color: #2e7d32; }
+    .health-item--attention .health-item__label { color: #9a6700; }
+    .health-item--risk      .health-item__label { color: #de5a5a; }
+
+    /* ── ENGINE CHIP ── */
+    .engine-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700; padding: 2px 7px;
+      border-radius: var(--radius-full); flex-shrink: 0;
+    }
+    .engine-chip--chatgpt    { background: #e9f4ff; color: #1565c0; }
+    .engine-chip--perplexity { background: #f3eaff; color: #6848c6; }
+
+    /* ── INSIGHT BOX ── */
+    .insight-box {
+      background: #f7faff; border-radius: var(--radius-xl);
+      padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; margin-top: 16px;
+    }
+    .insight-box__icon {
+      width: 26px; height: 26px; border-radius: 50%; background: #b1d1f6;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .insight-box__icon svg { width: 13px; height: 13px; color: #1565c0; }
+    .insight-box__text { font-size: 12px; color: #6b6b6b; line-height: 1.5; }
+
+    /* ── BREADCRUMB (placed in left region, after logo) ── */
+    @media (max-width: 900px) {
+      .grid-4  { grid-template-columns: repeat(2,1fr); }
+      .grid-3-1 { grid-template-columns: 1fr; }
+      .grid-2  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     APP BAR — DS component (.app-bar from ds-components.css)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="page-shell">
+  <nav class="app-bar" aria-label="Main navigation">
+    <div class="app-bar__content">
+
+      <!-- Left: hamburger + divider + logo + breadcrumb -->
+      <div class="app-bar__left">
+        <button class="app-bar__hamburger" aria-label="Toggle sidebar">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M0 1.5h16M0 5.5h16M0 9.5h16"/></svg>
+        </button>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+        <div class="app-bar__logo" aria-label="Adthena">
+          <svg width="113" height="26" viewBox="0 0 113 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M40.2884 15.4986H46.6049L43.4567 7.75058L40.2884 15.4986ZM38.1286 20.7466H36.4L43.3921 5.14664H43.6104L50.5143 20.7466H48.7864L47.1813 16.8731H39.7336L38.1286 20.7466Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M52.3366 15.993C52.3366 16.5311 52.4224 17.0344 52.5939 17.5037C52.7652 17.9729 53.0085 18.3798 53.3238 18.7246C53.6382 19.0695 54.0185 19.3423 54.4643 19.5419C54.9091 19.7421 55.4128 19.8423 55.9751 19.8423C56.5224 19.8423 57.0332 19.7421 57.5062 19.5419C57.9781 19.3423 58.386 19.0695 58.7287 18.7246C59.0711 18.3798 59.3382 17.9729 59.5305 17.5037C59.7221 17.0344 59.8179 16.5311 59.8179 15.993C59.8179 15.4551 59.7221 14.9514 59.5305 14.4822C59.3382 14.0133 59.0711 13.606 58.7287 13.261C58.386 12.9168 57.9781 12.6439 57.5062 12.4432C57.0332 12.2438 56.5224 12.1437 55.9751 12.1437C55.4128 12.1437 54.9091 12.2438 54.4643 12.4432C54.0185 12.6439 53.6382 12.9168 53.3238 13.261C53.0085 13.606 52.7652 14.0133 52.5939 14.4822C52.4224 14.9514 52.3366 15.4551 52.3366 15.993ZM61.1133 20.835H59.7566V19.2213H59.7157C59.496 19.5523 59.2358 19.8352 58.9352 20.0699C58.6335 20.3046 58.3179 20.4976 57.9889 20.6491C57.6609 20.8015 57.3218 20.9108 56.9719 20.9803C56.6223 21.0487 56.2904 21.0836 55.9756 21.0836C55.2214 21.0836 54.5335 20.9558 53.9096 20.7012C53.2862 20.4454 52.7486 20.0904 52.2967 19.6347C51.844 19.1796 51.4915 18.642 51.2381 18.0213C50.9841 17.4 50.8582 16.7244 50.8582 15.9931C50.8582 15.2622 50.9841 14.5856 51.2381 13.965C51.4915 13.344 51.844 12.806 52.2967 12.3502C52.7486 11.8953 53.2862 11.5405 53.9096 11.285C54.5335 11.0299 55.2214 10.902 55.9756 10.902C56.2904 10.902 56.6223 10.9366 56.9719 11.0055C57.3218 11.075 57.6609 11.1851 57.9889 11.3367C58.3179 11.4885 58.6335 11.6816 58.9352 11.916C59.2358 12.151 59.496 12.4332 59.7157 12.7646H59.7566V5.19055H61.1133V20.835Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M69.0471 12.392H66.2726V18.1036C66.2726 18.4628 66.3061 18.7554 66.3747 18.9832C66.4433 19.211 66.5394 19.387 66.6631 19.5112C66.7861 19.6346 66.9339 19.7214 67.105 19.7697C67.276 19.8181 67.4644 19.8423 67.6704 19.8423C67.9026 19.8423 68.1427 19.8077 68.3895 19.7386C68.6357 19.6694 68.8625 19.5799 69.0677 19.4694L69.1291 20.732C68.6216 20.9661 68.0125 21.0836 67.3003 21.0836C67.04 21.0836 66.7691 21.0487 66.4889 20.9802C66.2068 20.9107 65.9505 20.7803 65.718 20.5868C65.4846 20.3938 65.293 20.1318 65.142 19.8005C64.9909 19.4694 64.9157 19.0347 64.9157 18.497V12.392H62.8817V11.1503H64.9157V8.41852H66.2726V11.1503H69.0471V12.392Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M70.8964 5.19055H72.2527V12.7022H72.2935C72.4446 12.4407 72.6366 12.1985 72.8688 11.9781C73.1022 11.7577 73.3619 11.5678 73.6502 11.4088C73.9373 11.2507 74.2426 11.1263 74.5646 11.0364C74.8861 10.9469 75.2044 10.9019 75.5202 10.9019C76.7536 10.9019 77.6643 11.23 78.2542 11.8852C78.8421 12.5406 79.1373 13.4753 79.1373 14.689V20.835H77.781V15.4758C77.781 14.3995 77.5956 13.5752 77.2255 13.0024C76.8566 12.4299 76.1706 12.1437 75.171 12.1437C75.1026 12.1437 74.9104 12.1715 74.5949 12.2265C74.2803 12.2816 73.9483 12.4331 73.5984 12.6816C73.2495 12.93 72.9374 13.3024 72.664 13.799C72.3893 14.2961 72.2527 14.9857 72.2527 15.8687V20.835H70.8964V5.19055Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M89.8033 15.2477C89.8033 14.3239 89.5287 13.5752 88.9813 13.0025C88.4333 12.43 87.6658 12.1437 86.6797 12.1437C86.2412 12.1437 85.8158 12.2301 85.4054 12.4024C84.9941 12.5754 84.6347 12.806 84.3263 13.0954C84.0179 13.3855 83.7713 13.7164 83.5866 14.0891C83.4013 14.4616 83.3088 14.8481 83.3088 15.2477H89.8033ZM83.2676 16.3651C83.3088 16.8484 83.4256 17.3034 83.6171 17.7312C83.8094 18.1593 84.0622 18.5278 84.3771 18.8383C84.6927 19.1488 85.0559 19.3939 85.4672 19.573C85.8774 19.7524 86.3233 19.8423 86.803 19.8423C87.5289 19.8423 88.1562 19.6735 88.683 19.3348C89.2111 18.9973 89.6105 18.6073 89.8852 18.1657L90.9341 19.0347C90.3579 19.7666 89.7238 20.2908 89.0325 20.6078C88.3403 20.9245 87.5972 21.0836 86.803 21.0836C86.0899 21.0836 85.4292 20.9557 84.8193 20.7011C84.209 20.4454 83.6859 20.0903 83.2471 19.6347C82.8083 19.1795 82.4631 18.6419 82.2094 18.0212C81.9557 17.4 81.8289 16.7243 81.8289 15.993C81.8289 15.2621 81.9522 14.5855 82.1991 13.9649C82.4459 13.3439 82.7877 12.8059 83.2265 12.3501C83.6652 11.8952 84.1789 11.5404 84.7682 11.2849C85.357 11.0298 85.994 10.9019 86.6797 10.9019C87.4053 10.9019 88.0567 11.0334 88.6318 11.2952C89.2073 11.5577 89.691 11.9056 90.0805 12.3404C90.4713 12.7749 90.7693 13.2855 90.9749 13.8719C91.1803 14.4583 91.2833 15.0823 91.2833 15.7445V16.3651H83.2676Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M95.0454 11.1503C95.0729 11.4125 95.0893 11.6715 95.0968 11.9262C95.1037 12.1815 95.1071 12.4406 95.1071 12.7022H95.148C95.299 12.4406 95.491 12.1984 95.7235 11.978C95.9567 11.7576 96.2166 11.5678 96.5047 11.4087C96.7921 11.2507 97.097 11.1263 97.4191 11.0364C97.7411 10.9468 98.0592 10.9019 98.375 10.9019C99.6084 10.9019 100.519 11.2299 101.109 11.8852C101.697 12.5405 101.991 13.4753 101.991 14.6889V20.8349H100.635V15.4758C100.635 14.3994 100.45 13.5752 100.08 13.0023C99.7111 12.4299 99.0253 12.1436 98.0254 12.1436C97.9568 12.1436 97.7652 12.1715 97.4496 12.2264C97.1348 12.2816 96.8027 12.4331 96.4532 12.6815C96.1039 12.9299 95.7921 13.3024 95.5184 13.7989C95.2442 14.2961 95.1071 14.9856 95.1071 15.8687V20.8349H93.7505V13.2817C93.7505 13.0198 93.7406 12.6889 93.7199 12.2883C93.6993 11.8886 93.6752 11.5092 93.6479 11.1503H95.0454Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M110.644 16.0135C110.301 16.0135 109.873 16.0314 109.359 16.0653C108.845 16.0999 108.353 16.1829 107.88 16.3136C107.407 16.445 107.003 16.648 106.667 16.9239C106.331 17.2001 106.163 17.5794 106.163 18.0624C106.163 18.3798 106.228 18.6523 106.359 18.8798C106.489 19.1072 106.664 19.2933 106.883 19.4381C107.102 19.5834 107.345 19.6867 107.612 19.7489C107.88 19.8106 108.15 19.8422 108.424 19.8422C108.917 19.8422 109.346 19.7597 109.708 19.5937C110.071 19.4278 110.376 19.2041 110.623 18.9212C110.87 18.6384 111.052 18.3075 111.167 17.9276C111.284 17.5486 111.343 17.1449 111.343 16.7168V16.0135H110.644ZM111.343 14.8963V14.6476C111.343 12.9787 110.52 12.1436 108.876 12.1436C107.753 12.1436 106.773 12.5234 105.937 13.2817L105.115 12.309C106.019 11.3711 107.376 10.9019 109.184 10.9019C109.65 10.9019 110.099 10.9708 110.531 11.109C110.963 11.2471 111.335 11.4577 111.65 11.74C111.966 12.0228 112.219 12.3785 112.412 12.8059C112.603 13.2336 112.699 13.7442 112.699 14.3373V18.6622C112.699 19.0346 112.716 19.4247 112.75 19.8316C112.784 20.2389 112.822 20.5736 112.864 20.8349H111.548C111.507 20.6006 111.477 20.346 111.456 20.0698C111.435 19.7935 111.424 19.5249 111.424 19.2625H111.384C110.986 19.9112 110.517 20.3768 109.976 20.659C109.434 20.9419 108.773 21.0836 107.993 21.0836C107.568 21.0836 107.157 21.0247 106.76 20.9076C106.362 20.7904 106.009 20.6113 105.701 20.3695C105.392 20.1283 105.146 19.8316 104.961 19.48C104.776 19.128 104.683 18.7176 104.683 18.2488C104.683 17.4618 104.886 16.8446 105.29 16.3965C105.694 15.9483 106.201 15.6138 106.811 15.3929C107.42 15.1719 108.071 15.034 108.763 14.9786C109.456 14.9239 110.088 14.8963 110.664 14.8963H111.343Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 22.8909L9.81245 24.0115C9.64175 23.1359 9.55019 22.2335 9.55019 21.3083C9.55019 19.6522 9.83897 18.0634 10.3653 16.5876C9.03084 15.6612 7.86604 14.5054 6.92315 13.178L0 22.8909Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.7627 25.9467L23.5599 17.9904C21.9194 18.6768 20.1226 19.057 18.2395 19.057C15.9213 19.057 13.7352 18.4801 11.8111 17.4657C11.4163 18.6762 11.1995 19.9671 11.1995 21.3083C11.1995 22.3077 11.3213 23.2781 11.5448 24.2095L26.7627 25.9467Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M24.3224 15.9484L21.5003 8.91724L20.1061 9.35818C16.7502 10.4354 13.9466 12.7917 12.4327 15.9202C14.1618 16.861 16.1408 17.3965 18.2405 17.3965C19.9047 17.3965 21.4707 16.9881 23.0246 16.4418L23.9972 16.0992" fill="white"/><mask id="mask0_15_90" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="7" y="0" width="13" height="16"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.94653 6.10352e-05H19.4926V15.0282H7.94653V6.10352e-05Z" fill="white"/></mask><g mask="url(#mask0_15_90)"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.4926 7.88839L16.3164 6.10352e-05L7.94653 11.7421C8.76792 13.0192 9.81464 14.1339 11.0332 15.0283C12.7419 11.6145 15.7966 8.9974 19.4926 7.88839Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M10.3598 16.5908C9.02749 15.6657 7.86401 14.5117 6.92245 13.1869L5.31897 15.4375C6.09011 16.3338 6.9713 17.132 7.94377 17.8075C7.41807 19.2818 7.12999 20.8675 7.12999 22.5211C7.12999 22.9198 7.1503 23.3139 7.18345 23.7041L9.80798 24.0036C9.63756 23.1298 9.54586 22.2285 9.54586 21.3046C9.54586 19.651 9.83408 18.0647 10.3598 16.5908Z" fill="white"/></g></svg>
+        </div>
+      </div>
+
+      <!-- Center: empty — reserved for search -->
+      <div class="app-bar__center"></div>
+
+      <!-- Right: Domain ▾ | Arlo mascot + Ask Arlo + Support | Notifications + Settings + Data + Profile -->
+      <div class="app-bar__right">
+
+        <!-- Domain / Location selector -->
+        <button class="app-bar__domain-btn" aria-label="Select domain and location">
+          <svg width="11" height="15" viewBox="0 0 11 15" fill="#5bb3f9" aria-hidden="true"><path d="M5.5 0C2.5 0 0 2.5 0 5.5c0 4.2 5.5 9.5 5.5 9.5S11 9.7 11 5.5C11 2.5 8.5 0 5.5 0zm0 7.5a2 2 0 110-4 2 2 0 010 4z"/></svg>
+          <span class="app-bar__domain-text">adthena.com · UK</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M1 1l4 4 4-4"/></svg>
+        </button>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+        <!-- Arlo section: mascot 26×24 + label + divider + Support btn -->
+        <div class="app-bar__arlo-section">
+          <svg width="27" height="24" viewBox="0 0 27 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;flex-shrink:0"><path d="M2.18565 2.89709C2.41973 2.53971 2.89921 2.43976 3.25658 2.67385L11.393 8.00326L7.28353 14.2772L4.12687 12.2096C1.01925 10.174 0.150139 6.00471 2.18565 2.89709Z" fill="#FFC25E"/><path d="M11.393 8.00326L7.28353 14.2772L4.12696 12.2096L4.74338 11.2685L6.95886 12.7197L9.83548 8.32793L2.94397 3.81393C1.49038 6.36422 2.25427 9.63814 4.74338 11.2685L4.12696 12.2096L3.84197 12.0124C0.967759 9.91433 0.213842 5.90745 2.18571 2.897C2.41979 2.53972 2.89916 2.4398 3.2565 2.67379L11.393 8.00326Z" fill="#063059"/><path d="M19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045Z" fill="#FFC25E"/><path d="M9.99985 3.11085C9.25742 2.77266 8.57367 2.3619 7.89928 1.83804V4.71392C8.45178 4.01571 9.17323 3.4618 9.99985 3.11085ZM19.5054 12.2023C21.8149 12.2023 23.6873 10.3299 23.6873 8.02041C23.6873 5.71063 21.8152 3.83854 19.5054 3.83854C18.2301 3.83854 17.046 4.40521 16.2457 5.3988C16.0201 5.68852 15.5798 5.69589 15.3465 5.40617C14.5465 4.40833 13.3599 3.83854 12.0811 3.83854C9.77136 3.83854 7.89928 5.71063 7.89928 8.02041C7.89928 10.3299 9.77165 12.2023 12.0811 12.2023C13.3503 12.2023 14.5366 11.6401 15.3408 10.6417C15.5665 10.352 16.0067 10.3446 16.24 10.6346C17.0443 11.6373 18.2332 12.2023 19.5054 12.2023ZM18.831 13.3084L16.1995 15.9402C15.9753 16.1644 15.6113 16.1644 15.3871 15.9402L12.7555 13.3084C10.9007 13.5448 9.06267 12.7964 7.89928 11.3269V13.5899C7.89928 18.3821 11.8223 22.3051 16.6145 22.3051H18.3247V18.978C18.3247 15.9589 20.6969 13.4558 23.6873 13.2696V11.3269C22.5239 12.7964 20.6858 13.5448 18.831 13.3084ZM14.0465 12.9748L15.7933 14.7213L17.5401 12.9748C16.8867 12.7145 16.2936 12.329 15.7933 11.8437C15.2929 12.329 14.6999 12.7145 14.0465 12.9748ZM15.2144 8.02041C15.2144 8.77616 14.0655 8.77616 14.0655 8.02041C14.0655 5.41043 10.0968 5.41014 10.0968 8.02041C10.0968 8.77616 8.94758 8.77616 8.94758 8.02041C8.94758 3.89835 15.2144 3.89864 15.2144 8.02041ZM22.639 8.02041C22.639 8.77616 21.4898 8.77616 21.4898 8.02041C21.4898 5.41014 17.5211 5.41043 17.5211 8.02041C17.5211 8.77616 16.3721 8.77616 16.3721 8.02041C16.3721 3.89864 22.639 3.89864 22.639 8.02041ZM23.6873 4.71392V1.83804C23.014 2.36105 22.3283 2.77323 21.5867 3.11085C22.4096 3.46038 23.1331 4.01345 23.6873 4.71392ZM19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045ZM19.474 22.3051H23.6873V14.4216C21.3321 14.6059 19.474 16.5931 19.474 18.978V22.3051Z" fill="#063059"/><ellipse cx="11.925" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="11.175" cy="7.5" rx="0.749999" ry="0.75" fill="white"/><ellipse cx="19.35" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="18.6" cy="7.5" rx="0.749999" ry="0.75" fill="white"/></svg>
+          <span class="app-bar__arlo-label">Ask Arlo</span>
+          <div class="app-bar__vdivider" aria-hidden="true"></div>
+          <button class="app-bar__icon-btn" aria-label="Support">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6.5" stroke="white" stroke-width="1.5"/><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M7.5 9.2v-.5c0-.9.6-1.4 1.1-1.8A2 2 0 104.5 5.5"/><circle cx="7.5" cy="11.2" r=".75" fill="white"/></svg>
+          </button>
+        </div>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+        <!-- Icon group: Notifications · Settings · Data · Profile -->
+        <div class="app-bar__icons">
+          <button class="app-bar__icon-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
+            <svg width="13" height="15" viewBox="0 0 13 15" fill="white" aria-hidden="true"><path d="M6.5.5a5 5 0 00-5 5v3.5L.5 11v.5h12V11l-1-2V5.5a5 5 0 00-5-5zm-1.5 12a1.5 1.5 0 003 0z"/></svg>
+          </button>
+          <button class="app-bar__icon-btn" aria-label="Settings">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="white" aria-hidden="true"><path d="M5.7.8l-.4 1.5a4.5 4.5 0 00-1.3.8l-1.5-.5L.8 4.8l1.2.9a4.5 4.5 0 000 1.5L.8 8.2l1.7 3 1.5-.5c.4.3.8.6 1.3.8l.4 1.5h2.6l.4-1.5a4.5 4.5 0 001.3-.8l1.5.5 1.7-3-1.2-.9a4.5 4.5 0 000-1.5l1.2-.9-1.7-3-1.5.5a4.5 4.5 0 00-1.3-.8L8.3.8H5.7zM7 4.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z"/></svg>
+          </button>
+          <button class="app-bar__icon-btn" aria-label="Data">
+            <svg width="14" height="13" viewBox="0 0 14 13" fill="white" aria-hidden="true"><rect x="0" y="7" width="4" height="6" rx="1"/><rect x="5" y="3" width="4" height="10" rx="1"/><rect x="10" y="0" width="4" height="13" rx="1"/></svg>
+          </button>
+          <button class="app-bar__icon-btn app-bar__icon-btn--pill" aria-label="User profile">
+            <svg width="13" height="14" viewBox="0 0 13 14" fill="white" aria-hidden="true"><circle cx="6.5" cy="4.5" r="3.5"/><path d="M0 13.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="white"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE CONTENT
+     ══════════════════════════════════════════════════════════════ -->
+<main class="page-content">
+
+  <!-- SERVICE BAR -->
+  <div class="service-bar" style="margin-bottom:16px">
+
+    <!-- Row 1: Identity -->
+    <div class="service-bar__header">
+      <div class="service-bar__avatar">
+        <img src="https://www.figma.com/api/mcp/asset/d25552db-f050-4247-8d37-873b3e2497c2" width="20" height="20" alt="AI Search" style="filter: brightness(0) invert(1);">
+      </div>
+      <div class="service-bar__text">
+        <span class="service-bar__title">LLM Performance</span>
+        <span class="service-bar__subtitle">Citation share, prompt health &amp; brand visibility across ChatGPT and Perplexity</span>
+      </div>
+      <div class="service-bar__actions">
+        <div class="service-bar__date">
+          <svg width="14" height="15" viewBox="0 0 14 15" fill="none" style="flex-shrink:0">
+            <rect x="0.5" y="1.5" width="13" height="13" rx="2" stroke="#2f78bd"/>
+            <path d="M0.5 5.5h13" stroke="#2f78bd"/>
+            <path d="M4 0.5v2M10 0.5v2" stroke="#2f78bd" stroke-linecap="round"/>
+          </svg>
+          <span class="service-bar__date-label">14 Apr <span style="font-size:10px">2026</span> – 13 May <span style="font-size:10px">2026</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Engine tabs -->
+    <div class="service-bar__tabs">
+      <div class="tab-item tab-item--active" role="tab" aria-selected="true">All engines</div>
+      <div class="tab-item" role="tab" aria-selected="false">
+        <span class="tab-item__icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#cgpt-tab1)"><path d="M14.853 6.54845C15.216 5.45895 15.091 4.26545 14.5105 3.27445C13.6375 1.75445 11.8825 0.972452 10.1685 1.34045C9.40596 0.481452 8.31046-0.00704786 7.16196-4.78587e-05C5.40996-0.00404786 3.85546 1.12395 3.31646 2.79095C2.19096 3.02145 1.21946 3.72595 0.650955 4.72445C-0.228545 6.24045-0.0280446 8.15145 1.14696 9.45145C0.783955 10.541 0.908955 11.7345 1.48946 12.7255C2.36246 14.2455 4.11746 15.0275 5.83145 14.6595C6.59345 15.5185 7.68946 16.007 8.83795 15.9995C10.591 16.004 12.146 14.875 12.685 13.2065C13.8105 12.976 14.782 12.2715 15.3505 11.273C16.229 9.75695 16.028 7.84745 14.8535 6.54745L14.853 6.54845ZM8.83895 14.954C8.13745 14.955 7.45796 14.7095 6.91946 14.26C6.94396 14.247 6.98646 14.2235 7.01396 14.2065L10.2 12.3665C10.363 12.274 10.463 12.1005 10.462 11.913V7.42145L11.8085 8.19895C11.823 8.20595 11.8325 8.21995 11.8345 8.23595V11.9555C11.8325 13.6095 10.493 14.9505 8.83895 14.954ZM2.39696 12.2025C2.04546 11.5955 1.91896 10.884 2.03946 10.1935C2.06296 10.2075 2.10446 10.233 2.13396 10.25L5.31996 12.09C5.48146 12.1845 5.68146 12.1845 5.84346 12.09L9.73295 9.84395V11.399C9.73396 11.415 9.72645 11.4305 9.71395 11.4405L6.49345 13.3C5.05895 14.126 3.22696 13.635 2.39746 12.2025H2.39696ZM1.55846 5.24795C1.90846 4.63995 2.46096 4.17495 3.11896 3.93345C3.11896 3.96095 3.11746 4.00945 3.11746 4.04345V7.72395C3.11646 7.91095 3.21646 8.08445 3.37896 8.17695L7.26846 10.4225L5.92196 11.2C5.90846 11.209 5.89146 11.2105 5.87645 11.204L2.65546 9.34295C1.22396 8.51395 0.732955 6.68245 1.55796 5.24845L1.55846 5.24795ZM12.6215 7.82245L8.73196 5.57645L10.0785 4.79945C10.092 4.79045 10.109 4.78895 10.124 4.79545L13.345 6.65495C14.779 7.48345 15.2705 9.31795 14.442 10.752C14.0915 11.359 13.5395 11.824 12.882 12.066V8.27545C12.8835 8.08845 12.784 7.91545 12.622 7.82245H12.6215ZM13.9615 5.80545C13.938 5.79095 13.8965 5.76595 13.867 5.74895L10.681 3.90895C10.5195 3.81445 10.3195 3.81445 10.1575 3.90895L6.26795 6.15495V4.59995C6.26695 4.58395 6.27446 4.56845 6.28695 4.55845L9.50745 2.70045C10.942 1.87295 12.776 2.36545 13.603 3.80045C13.9525 4.40645 14.079 5.11595 13.9605 5.80545H13.9615ZM5.53595 8.57695L4.18895 7.79945C4.17446 7.79245 4.16496 7.77845 4.16296 7.76245V4.04295C4.16396 2.38695 5.50746 1.04495 7.16346 1.04595C7.86396 1.04595 8.54195 1.29195 9.08045 1.73995C9.05595 1.75295 9.01396 1.77645 8.98596 1.79345L5.79995 3.63345C5.63696 3.72595 5.53696 3.89895 5.53796 4.08645L5.53595 8.57595V8.57695ZM6.26746 6.99995L7.99996 5.99945L9.73246 6.99945V8.99995L7.99996 9.99995L6.26746 8.99995V6.99995Z" fill="currentColor"/></g><defs><clipPath id="cgpt-tab1"><rect width="16" height="16" fill="white"/></clipPath></defs></svg>
+        </span>
+        ChatGPT
+      </div>
+      <div class="tab-item" role="tab" aria-selected="false">
+        <span class="tab-item__icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13.1226 0V4.79291H14.9091V11.6132H12.9779V15.8182L8.34746 11.7358V15.7859H7.62957V11.7312L2.9939 15.8182V11.5572H1.09094V4.73755H2.98864V0L7.62957 4.28014V0.125227H8.3468V4.40273L13.1226 0ZM8.34746 5.96082V10.7847L12.26 14.2344V9.51727L8.34746 5.96082ZM7.62431 5.90809L3.71179 9.46586V14.2344L7.62431 10.7847V5.90809ZM12.9779 10.904H14.1912V5.50275H8.96073L12.9779 9.15411V10.904ZM7.06764 5.44673H1.80817V10.848H2.99259V9.15016L7.06764 5.44673ZM3.70653 1.63191V4.73623H7.07224L3.70653 1.63191ZM12.4047 1.63191L9.03903 4.73623H12.4047V1.63191Z" fill="currentColor"/>
+          </svg>
+        </span>
+        Perplexity
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── KPI CARDS — DS .kpi-card component ── -->
+  <!-- Shared SVG gradient defs for inline sparklines -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="grad-up" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#40af46" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#40af46" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="grad-down" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#de5a5a" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#de5a5a" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="grad-flat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6477a2" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#6477a2" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="grid-4">
+
+    <!-- Citation Frequency -->
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Citation Frequency</span>
+        <div class="kpi-info-wrap">
+          <div class="kpi-card__info-icon" role="button" tabindex="0" aria-label="More information">i</div>
+          <div class="tooltip-info kpi-info-tooltip">
+            <div class="tooltip-info__body">Share of all LLM responses (ChatGPT + Perplexity) that cite adthena.com across tracked prompts in the selected date range.</div>
+            <svg class="tooltip-info__arrow" width="78" height="10" viewBox="0 0 78 10" fill="none"><path d="M24 0H54C54 0 52.203 0 49 2.4096C45.7745 4.83616 42.0352 7.68387 40.1758 9.10226C39.4766 9.63566 38.5145 9.65177 37.8035 9.13418C36.0242 7.83892 32.5121 5.25297 29 2.5C25.8106 0 24 0 24 0Z" fill="white"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__row">
+          <div class="kpi-card__values">
+            <div class="kpi-card__bar"></div>
+            <span class="kpi-card__value">3.75</span>
+            <span class="kpi-card__value-unit">%</span>
+            <span class="kpi-card__delta kpi-card__delta--up">+19%</span>
+          </div>
+          <div class="kpi-card__sparkline" data-color="#40af46">
+            <svg width="100%" height="44" viewBox="0 0 214 44" preserveAspectRatio="none">
+              <path d="M0,38 C50,34 100,26 140,18 C170,12 192,7 214,4" fill="none" stroke="#40af46" stroke-width="1.5"/>
+              <path d="M0,38 C50,34 100,26 140,18 C170,12 192,7 214,4 L214,44 L0,44Z" fill="url(#grad-up)"/>
+            </svg>
+            <div class="kpi-card__hover-dot" style="background:#40af46"></div>
+            <div class="kpi-card__hover-tooltip"></div>
+          </div>
+        </div>
+        <span class="kpi-card__subtitle">Share of LLM responses citing adthena.com</span>
+      </div>
+    </div>
+
+    <!-- Performance Score -->
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Performance Score</span>
+        <div class="kpi-info-wrap">
+          <div class="kpi-card__info-icon" role="button" tabindex="0" aria-label="More information">i</div>
+          <div class="tooltip-info kpi-info-tooltip">
+            <div class="tooltip-info__body">Combined quality score (0–100) factoring citation frequency, average position, and brand mention rate across all tracked prompts.</div>
+            <svg class="tooltip-info__arrow" width="78" height="10" viewBox="0 0 78 10" fill="none"><path d="M24 0H54C54 0 52.203 0 49 2.4096C45.7745 4.83616 42.0352 7.68387 40.1758 9.10226C39.4766 9.63566 38.5145 9.65177 37.8035 9.13418C36.0242 7.83892 32.5121 5.25297 29 2.5C25.8106 0 24 0 24 0Z" fill="white"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__row">
+          <div class="kpi-card__values">
+            <div class="kpi-card__bar" style="background:#b8e5ba"></div>
+            <span class="kpi-card__value" style="color:#40af46">95.3</span>
+            <span class="kpi-card__delta kpi-card__delta--up">+2.1</span>
+          </div>
+          <div class="kpi-card__sparkline" data-color="#40af46">
+            <svg width="100%" height="44" viewBox="0 0 214 44" preserveAspectRatio="none">
+              <path d="M0,20 C40,18 80,16 120,14 C160,12 190,10 214,8" fill="none" stroke="#40af46" stroke-width="1.5"/>
+              <path d="M0,20 C40,18 80,16 120,14 C160,12 190,10 214,8 L214,44 L0,44Z" fill="url(#grad-up)"/>
+            </svg>
+            <div class="kpi-card__hover-dot" style="background:#40af46"></div>
+            <div class="kpi-card__hover-tooltip"></div>
+          </div>
+        </div>
+        <span class="kpi-card__subtitle">Combined citation quality &amp; position score (0–100)</span>
+      </div>
+    </div>
+
+    <!-- Avg Citation Position -->
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Avg Citation Position</span>
+        <div class="kpi-info-wrap">
+          <div class="kpi-card__info-icon" role="button" tabindex="0" aria-label="More information">i</div>
+          <div class="tooltip-info kpi-info-tooltip">
+            <div class="tooltip-info__body">Average rank of adthena.com in the LLM citation list when it is cited. Lower is better — position #1 means cited first.</div>
+            <svg class="tooltip-info__arrow" width="78" height="10" viewBox="0 0 78 10" fill="none"><path d="M24 0H54C54 0 52.203 0 49 2.4096C45.7745 4.83616 42.0352 7.68387 40.1758 9.10226C39.4766 9.63566 38.5145 9.65177 37.8035 9.13418C36.0242 7.83892 32.5121 5.25297 29 2.5C25.8106 0 24 0 24 0Z" fill="white"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__row">
+          <div class="kpi-card__values">
+            <div class="kpi-card__bar" style="background:#ccc1ec"></div>
+            <span class="kpi-card__value" style="color:#6848c6;font-size:36px">5.3</span>
+            <span class="kpi-card__delta kpi-card__delta--up">+0.4</span>
+          </div>
+          <div class="kpi-card__sparkline" data-color="#6477a2">
+            <svg width="100%" height="44" viewBox="0 0 235 44" preserveAspectRatio="none">
+              <path d="M0,22 C60,21 120,23 180,22 C200,22 215,22 235,22" fill="none" stroke="#6477a2" stroke-width="1.5"/>
+              <path d="M0,22 C60,21 120,23 180,22 C200,22 215,22 235,22 L235,44 L0,44Z" fill="url(#grad-flat)"/>
+            </svg>
+            <div class="kpi-card__hover-dot" style="background:#6477a2"></div>
+            <div class="kpi-card__hover-tooltip"></div>
+          </div>
+        </div>
+        <span class="kpi-card__subtitle">Lower is better — avg rank in LLM citation list</span>
+      </div>
+    </div>
+
+    <!-- Brand Mentioned -->
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Brand Mentioned</span>
+        <div class="kpi-info-wrap">
+          <div class="kpi-card__info-icon" role="button" tabindex="0" aria-label="More information">i</div>
+          <div class="tooltip-info kpi-info-tooltip">
+            <div class="tooltip-info__body">Number of tracked prompts (out of 64) where adthena.com appears in at least one LLM response during the period.</div>
+            <svg class="tooltip-info__arrow" width="78" height="10" viewBox="0 0 78 10" fill="none"><path d="M24 0H54C54 0 52.203 0 49 2.4096C45.7745 4.83616 42.0352 7.68387 40.1758 9.10226C39.4766 9.63566 38.5145 9.65177 37.8035 9.13418C36.0242 7.83892 32.5121 5.25297 29 2.5C25.8106 0 24 0 24 0Z" fill="white"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__row">
+          <div class="kpi-card__values kpi-card__values--full">
+            <div class="kpi-card__bar" style="background:#ffd5b2"></div>
+            <span class="kpi-card__value" style="color:#e06500;font-size:36px">55</span>
+            <span class="kpi-card__value-unit" style="color:#e06500">%</span>
+            <span class="kpi-card__delta kpi-card__delta--flat">35/64</span>
+          </div>
+        </div>
+        <span class="kpi-card__subtitle">Prompts where adthena.com is cited</span>
+      </div>
+    </div>
+
+  </div><!-- /grid-4 -->
+
+  <!-- CITATION TREND + POSITION TREND -->
+  <div class="grid-3-1">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header__icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="2,12 6,7 9,9 14,4"/></svg>
+        </div>
+        <div class="card-header__titles">
+          <div class="card-header__title">Citation Frequency — 30-day Trend</div>
+          <div class="card-header__sub">Daily share of LLM responses citing adthena.com vs top competitors</div>
+        </div>
+        <div class="card-header__actions">
+          <div class="icon-btn-sm"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v7M4 6l3 3 3-3M2 11h10"/></svg></div>
+          <div class="icon-btn-sm"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 5v2.5l1.5 1.5"/></svg></div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-trend"></canvas></div>
+      <div class="insight-box">
+        <div class="insight-box__icon"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 5v2.5"/><circle cx="7" cy="9.5" r="0.4" fill="currentColor"/></svg></div>
+        <p class="insight-box__text">Citation frequency spiked to <strong>7.84%</strong> on 13 May and <strong>7.41%</strong> on 10 May — both significantly above the 30-day average of 3.75%. The last 7 days average (5.27%) is up +19% vs the first 7 days (4.43%).</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header__icon" style="background:#9b84e1">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 2"/></svg>
+        </div>
+        <div class="card-header__titles">
+          <div class="card-header__title">Avg Position Trend</div>
+          <div class="card-header__sub">Daily citation rank (lower = better)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-pos-trend"></canvas></div>
+      <div class="insight-box">
+        <div class="insight-box__icon"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 5v2.5"/><circle cx="7" cy="9.5" r="0.4" fill="currentColor"/></svg></div>
+        <p class="insight-box__text">Best position recorded: <strong>#2.3</strong> on 24 Apr. Position spiked to <strong>14.4</strong> on 19 Apr — investigate prompt coverage for that date.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROMPT HEALTH + BRAND SHARE BY GROUP -->
+  <div class="grid-2">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header__icon" style="background:#5fc464">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2C5 2 3 4 3 6.5c0 3.5 5 7.5 5 7.5s5-4 5-7.5C13 4 11 2 8 2z"/></svg>
+        </div>
+        <div class="card-header__titles">
+          <div class="card-header__title">Prompt Health</div>
+          <div class="card-header__sub">64 prompts across 10 groups · 14 Apr – 13 May 2026</div>
+        </div>
+      </div>
+      <div class="health-row">
+        <div class="health-item health-item--strong">
+          <div class="health-item__count">13</div>
+          <div class="health-item__label">Strong</div>
+        </div>
+        <div class="health-item health-item--attention">
+          <div class="health-item__count">12</div>
+          <div class="health-item__label">Attention</div>
+        </div>
+        <div class="health-item health-item--risk">
+          <div class="health-item__count">39</div>
+          <div class="health-item__label">At Risk</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-health"></canvas></div>
+      <div class="insight-box" style="margin-top:12px">
+        <div class="insight-box__icon"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 5v2.5"/><circle cx="7" cy="9.5" r="0.4" fill="currentColor"/></svg></div>
+        <p class="insight-box__text"><strong>60.9%</strong> of tracked prompts are At Risk — adthena.com is not cited or recommended in competitor-intent queries. <strong>Best paid search tools</strong> and <strong>AI Search</strong> groups drive most gaps.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header__icon" style="background:#64abfb">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="3" height="6" rx="1"/><rect x="7" y="5" width="3" height="9" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg>
+        </div>
+        <div class="card-header__titles">
+          <div class="card-header__title">Brand Share of Mentions</div>
+          <div class="card-header__sub">% of citations referencing adthena.com per prompt group</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-brand-share"></canvas></div>
+      <div class="insight-box">
+        <div class="insight-box__icon"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 5v2.5"/><circle cx="7" cy="9.5" r="0.4" fill="currentColor"/></svg></div>
+        <p class="insight-box__text"><strong>Adthena Brand</strong> queries drive the highest visibility (ChatGPT 48%, Perplexity 66%). Non-branded categories like <strong>Best Paid Search Tools</strong> remain below 5% — a key gap to address with content.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DOMAIN PERFORMANCE TABLE -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+      <div class="card-header__icon" style="background:#f47d20">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="14" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div class="card-header__titles">
+        <div class="card-header__title">Domain Performance — Top Competitors</div>
+        <div class="card-header__sub">Citation frequency, performance score &amp; avg position across ChatGPT + Perplexity</div>
+      </div>
+      <div class="card-header__actions">
+        <div class="icon-btn-sm"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v7M4 6l3 3 3-3M2 11h10"/></svg></div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:220px">Domain</th>
+          <th>Citation Freq</th>
+          <th style="width:200px">Performance Score</th>
+          <th class="right">Avg Position</th>
+        </tr>
+      </thead>
+      <tbody id="domain-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- PROMPT GROUP METRICS TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header__icon" style="background:#d47dd4">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10M3 8h7M3 12h5"/><circle cx="13" cy="12" r="2"/></svg>
+      </div>
+      <div class="card-header__titles">
+        <div class="card-header__title">Prompt Group Metrics</div>
+        <div class="card-header__sub">Citation counts &amp; brand share of mentions by group and engine</div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Prompt Group</th>
+          <th>Engine</th>
+          <th class="right">Total Citations</th>
+          <th class="right">Unique Domains</th>
+          <th class="right">Brand Share</th>
+        </tr>
+      </thead>
+      <tbody id="prompt-table-body"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const DATES = [
+  'Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20',
+  'Apr 21','Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27',
+  'Apr 28','Apr 29','Apr 30','May 01','May 02','May 03','May 04',
+  'May 05','May 06','May 07','May 08','May 09','May 10','May 11',
+  'May 12','May 13'
+];
+
+const ADTHENA_FREQ  = [4.57,4.12,4.17,4.78,4.65,3.76,4.92,3.33,4.04,4.21,2.33,2.69,4.15,3.06,2.50,1.58,3.23,3.10,1.72,2.12,2.63,3.36,5.02,3.51,4.19,7.14,7.41,2.90,3.93,7.84];
+const SEL_FREQ      = [1.71,2.06,2.60,2.79,1.55,3.01,2.46,0.56,5.56,3.27,3.49,4.48,4.66,3.06,3.93,3.56,4.15,3.54,3.45,2.54,4.39,4.20,1.16,2.92,2.09,2.98,1.59,2.90,3.37,1.96];
+const LINKEDIN_FREQ = [4.57,3.29,3.65,1.99,3.10,2.26,null,2.78,2.53,2.80,1.94,2.24,1.04,2.18,2.50,1.98,2.30,2.21,2.16,2.54,1.32,2.52,1.54,4.68,2.09,3.57,2.12,4.35,3.93,3.92];
+const ADTHENA_POS   = [5.7,7.3,4.2,3.8,3.9,14.4,4.4,4.0,4.0,3.7,2.3,3.9,3.4,4.9,5.0,4.0,3.5,2.9,4.9,3.4,4.8,3.5,5.4,10.4,4.6,2.8,6.6,6.9,4.0,6.2];
+
+const DOMAIN_PERF = [
+  { domain:'adthena.com',          freq:3.75, score:95.3, pos:5.3,  isUs:true  },
+  { domain:'searchengineland.com', freq:3.07, score:83.9, pos:5.2,  isUs:false },
+  { domain:'linkedin.com',         freq:2.56, score:75.2, pos:5.8,  isUs:false },
+  { domain:'google.com',           freq:2.51, score:79.0, pos:5.6,  isUs:false },
+  { domain:'reddit.com',           freq:2.16, score:67.0, pos:7.4,  isUs:false },
+  { domain:'semrush.com',          freq:1.94, score:71.4, pos:4.9,  isUs:false },
+  { domain:'searchmetrics.com',    freq:1.72, score:68.2, pos:6.1,  isUs:false },
+  { domain:'wordstream.com',       freq:1.58, score:62.8, pos:7.2,  isUs:false },
+];
+
+const PROMPT_GROUPS = [
+  { group:'Adthena brand',               engine:'chatgpt',    total:225, unique:17,  share:0.4806 },
+  { group:'Adthena brand',               engine:'perplexity', total:670, unique:52,  share:0.6582 },
+  { group:'Best paid search tools',      engine:'chatgpt',    total:450, unique:81,  share:0.0389 },
+  { group:'Best paid search tools',      engine:'perplexity', total:989, unique:127, share:0.0402 },
+  { group:'Brand protection',            engine:'chatgpt',    total:323, unique:45,  share:0.0914 },
+  { group:'Brand protection',            engine:'perplexity', total:737, unique:69,  share:0.2744 },
+  { group:'Competitor: Auction Insights',engine:'chatgpt',    total:271, unique:40,  share:0.1456 },
+  { group:'Competitor: Auction Insights',engine:'perplexity', total:574, unique:79,  share:0.2214 },
+  { group:'Competitor: SEMrush',         engine:'chatgpt',    total:227, unique:23,  share:0.0549 },
+  { group:'Competitor: SEMrush',         engine:'perplexity', total:641, unique:86,  share:0.0303 },
+  { group:'Google Paid Search',          engine:'chatgpt',    total:141, unique:30,  share:0.0674 },
+  { group:'Google Paid Search',          engine:'perplexity', total:643, unique:123, share:0.0350 },
+  { group:'Market Share',                engine:'chatgpt',    total:34,  unique:14,  share:0.0694 },
+  { group:'Market Share',                engine:'perplexity', total:702, unique:132, share:0.1132 },
+  { group:'AI Search',                   engine:'chatgpt',    total:354, unique:76,  share:0.0138 },
+  { group:'AI Search',                   engine:'perplexity', total:855, unique:144, share:0.1376 },
+];
+
+// ─── CHART CONFIGS ────────────────────────────────────────────────────────────
+
+const FONT = { family: "'Open Sans',Helvetica" };
+const TOOLTIP_DEFAULTS = {
+  backgroundColor: 'rgba(0,0,0,0.8)', cornerRadius: 6,
+  titleFont: { ...FONT, size: 11, weight: '600' },
+  bodyFont:  { ...FONT, size: 11 },
+  padding: { x: 10, y: 6 }
+};
+
+// Citation Frequency Trend
+(function() {
+  const ctx = document.getElementById('chart-trend').getContext('2d');
+  const makeGrad = color => { const g = ctx.createLinearGradient(0,0,0,220); g.addColorStop(0,color+'33'); g.addColorStop(1,color+'00'); return g; };
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DATES,
+      datasets: [
+        { label:'adthena.com',          data:ADTHENA_FREQ, borderColor:'#b3a2e7', backgroundColor:makeGrad('#b3a2e7'), borderWidth:2, fill:true,  pointRadius:0, tension:0.35 },
+        { label:'searchengineland.com', data:SEL_FREQ,     borderColor:'#64abfb', backgroundColor:'transparent',      borderWidth:1.5,fill:false, pointRadius:0, tension:0.35, borderDash:[4,3] },
+        { label:'linkedin.com',         data:LINKEDIN_FREQ,borderColor:'#d47dd4', backgroundColor:'transparent',      borderWidth:1.5,fill:false, pointRadius:0, tension:0.35, borderDash:[4,3] },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 800, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { position:'bottom', align:'start', labels: { ...FONT, font: { ...FONT, size:11, weight:'600' }, color:'#38476a', padding:16, boxWidth:10, boxHeight:2, usePointStyle:true, pointStyle:'line' } },
+        tooltip: { ...TOOLTIP_DEFAULTS, callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{ font:{...FONT,size:10}, color:'#6477a2', maxRotation:0, autoSkip:true, maxTicksLimit:10 } },
+        y: { grid:{color:'#eaeff5'}, ticks:{ font:{...FONT,size:10}, color:'#6477a2', callback:v=>v+'%' }, beginAtZero:true }
+      }
+    }
+  });
+})();
+
+// Avg Position Trend
+(function() {
+  const ctx = document.getElementById('chart-pos-trend').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,220);
+  grad.addColorStop(0,'#9b84e140'); grad.addColorStop(1,'#9b84e100');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels:DATES, datasets:[{ label:'Avg Position', data:ADTHENA_POS, borderColor:'#9b84e1', backgroundColor:grad, borderWidth:2, fill:true, pointRadius:0, tension:0.35 }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      animation:{duration:800,easing:'easeOutQuart'},
+      plugins:{ legend:{display:false}, tooltip:{...TOOLTIP_DEFAULTS, callbacks:{label:c=>` Position #${c.parsed.y.toFixed(1)}`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{...FONT,size:10},color:'#6477a2',maxRotation:0,autoSkip:true,maxTicksLimit:8}},
+        y:{grid:{color:'#eaeff5'},reverse:true,ticks:{font:{...FONT,size:10},color:'#6477a2',callback:v=>'#'+v},min:1,max:16}
+      }
+    }
+  });
+})();
+
+// Prompt Health Doughnut
+(function() {
+  const ctx = document.getElementById('chart-health').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels:['Strong','Attention','At Risk'], datasets:[{ data:[13,12,39], backgroundColor:['#40af46','#f5a623','#de5a5a'], borderWidth:0, hoverOffset:4 }] },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{...FONT,size:11,weight:'600'}, color:'#38476a', padding:16, boxWidth:10 } },
+        tooltip:{ ...TOOLTIP_DEFAULTS, callbacks:{ label:c=>` ${c.label}: ${c.parsed} prompts (${((c.parsed/64)*100).toFixed(0)}%)` } }
+      }
+    },
+    plugins:[{ id:'centerText', afterDraw(chart) {
+      const {ctx,chartArea:{left,top,right,bottom}} = chart;
+      const cx=(left+right)/2, cy=(top+bottom)/2;
+      ctx.save();
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font = "300 28px 'Open Sans',Helvetica";
+      ctx.fillStyle = '#de5a5a';
+      ctx.fillText('60.9%', cx, cy-8);
+      ctx.font = "600 10px 'Open Sans',Helvetica";
+      ctx.fillStyle = '#6477a2';
+      ctx.fillText('AT RISK', cx, cy+14);
+      ctx.restore();
+    }}]
+  });
+})();
+
+// Brand Share Horizontal Bar
+(function() {
+  const ctx = document.getElementById('chart-brand-share').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Adthena brand','Brand protection','Competitor:\nAuction Insights','Market Share','Google Paid\nSearch','Competitor:\nSEMrush','AI Search','Best paid\nsearch tools'],
+      datasets: [
+        { label:'ChatGPT',    data:[48.1,9.1,14.6,6.9,6.7,5.5,1.4,3.9],  backgroundColor:'#b3a2e7', borderRadius:4, barThickness:10 },
+        { label:'Perplexity', data:[65.8,27.4,22.1,11.3,3.5,3.0,13.8,4.0], backgroundColor:'#64abfb', borderRadius:4, barThickness:10 },
+      ]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      animation:{duration:800,easing:'easeOutQuart'},
+      plugins:{
+        legend:{ position:'bottom', labels:{font:{...FONT,size:11,weight:'600'},color:'#38476a',padding:16,boxWidth:10} },
+        tooltip:{...TOOLTIP_DEFAULTS, callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.x.toFixed(1)}%`}}
+      },
+      scales:{
+        x:{grid:{color:'#eaeff5'},ticks:{font:{...FONT,size:10},color:'#6477a2',callback:v=>v+'%'},max:80},
+        y:{grid:{display:false},ticks:{font:{...FONT,size:10,weight:'600'},color:'#485982'}}
+      }
+    }
+  });
+})();
+
+// ─── DOMAIN TABLE ─────────────────────────────────────────────────────────────
+
+(function() {
+  const tbody = document.getElementById('domain-table-body');
+  DOMAIN_PERF.forEach(d => {
+    const scoreClass = d.score >= 85 ? 'strong' : d.score >= 70 ? 'mid' : 'low';
+    const posClass   = d.pos  <= 5   ? 'good'   : d.pos  <= 7  ? 'mid' : 'bad';
+    const favicon    = `https://www.google.com/s2/favicons?domain=${d.domain}&sz=32`;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>
+          <div class="domain-cell">
+            <img class="favicon" src="${favicon}" alt="" onerror="this.style.display='none'"/>
+            <span class="domain-name">${d.domain}</span>
+            ${d.isUs ? '<span class="you-badge">YOU</span>' : ''}
+          </div>
+        </td>
+        <td><span class="freq-num">${d.freq.toFixed(2)}%</span></td>
+        <td>
+          <div class="score-bar">
+            <div class="score-bg"><div class="score-fill score-fill--${scoreClass}" style="width:${d.score}%"></div></div>
+            <span class="score-num">${d.score}</span>
+          </div>
+        </td>
+        <td class="right"><span class="pos-chip pos-chip--${posClass}">#${d.pos}</span></td>
+      </tr>`);
+  });
+})();
+
+// ─── PROMPT GROUP TABLE ───────────────────────────────────────────────────────
+
+(function() {
+  const tbody = document.getElementById('prompt-table-body');
+  PROMPT_GROUPS.forEach(r => {
+    const shareColour = r.share >= 0.3 ? '#40af46' : r.share >= 0.1 ? '#e06500' : '#de5a5a';
+    const pct = (r.share * 100).toFixed(1);
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td style="font-size:13px;font-weight:600;color:#27365b">${r.group}</td>
+        <td><span class="engine-chip engine-chip--${r.engine}">${r.engine === 'chatgpt' ? 'ChatGPT' : 'Perplexity'}</span></td>
+        <td class="right" style="font-weight:600">${r.total.toLocaleString()}</td>
+        <td class="right">${r.unique}</td>
+        <td class="right" style="font-weight:700;color:${shareColour}">${pct}%</td>
+      </tr>`);
+  });
+})();
+
+// ─── ENGINE TAB INTERACTION ───────────────────────────────────────────────────
+
+document.querySelectorAll('.service-bar__tabs .tab-item').forEach(tab => {
+  tab.addEventListener('click', () => {
+    tab.closest('.service-bar__tabs').querySelectorAll('.tab-item').forEach(t => {
+      t.classList.remove('tab-item--active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    tab.classList.add('tab-item--active');
+    tab.setAttribute('aria-selected', 'true');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Page — adthena.com · UK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../app/styleguide/ds-components.css" />
+  <style>
+    .page-shell {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 50;
+    }
+    .page-content {
+      padding: 74px 24px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── APP BAR ─────────────────────────────────────────────── -->
+  <div class="page-shell">
+    <nav class="app-bar" aria-label="Main navigation">
+      <div class="app-bar__content">
+
+        <!-- Left: hamburger + logo -->
+        <div class="app-bar__left">
+          <button class="app-bar__hamburger" aria-label="Toggle sidebar" aria-expanded="false">
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+              <rect width="16" height="1.5" rx="0.75" fill="white"/>
+              <rect y="5.25" width="16" height="1.5" rx="0.75" fill="white"/>
+              <rect y="10.5" width="16" height="1.5" rx="0.75" fill="white"/>
+            </svg>
+          </button>
+          <div class="app-bar__vdivider" aria-hidden="true"></div>
+          <div class="app-bar__logo">
+            <img src="../app/styleguide/assets/adthena-favicon-white.svg" width="26" height="26" alt="Adthena" />
+          </div>
+        </div>
+
+        <!-- Center: reserved -->
+        <div class="app-bar__center"></div>
+
+        <!-- Right: domain · arlo · icons -->
+        <div class="app-bar__right">
+
+          <!-- Domain / Location selector -->
+          <button class="app-bar__domain-btn" aria-label="Domain and location">
+            <svg width="11" height="15" viewBox="0 0 11 15" fill="none" aria-hidden="true">
+              <path d="M5.5 0C2.467 0 0 2.467 0 5.5c0 3.85 5.5 9.5 5.5 9.5S11 9.35 11 5.5C11 2.467 8.533 0 5.5 0zm0 7.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="#5bb3f9"/>
+            </svg>
+            <span class="app-bar__domain-text">adthena.com / United Kingdom</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+              <path d="M1 1l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+          <!-- Ask Arlo -->
+          <div class="app-bar__arlo-section">
+            <svg width="26" height="24" viewBox="0 0 26 24" fill="none" aria-hidden="true">
+              <ellipse cx="13" cy="14" rx="8" ry="8" fill="#1a3a5c"/>
+              <circle cx="13" cy="10" r="6" fill="#2a5080"/>
+              <circle cx="10.5" cy="9" r="1.5" fill="white"/>
+              <circle cx="15.5" cy="9" r="1.5" fill="white"/>
+              <circle cx="10.5" cy="9" r="0.75" fill="#063059"/>
+              <circle cx="15.5" cy="9" r="0.75" fill="#063059"/>
+              <path d="M10.5 12.5 Q13 14.5 15.5 12.5" stroke="white" stroke-width="1" stroke-linecap="round" fill="none"/>
+            </svg>
+            <span class="app-bar__arlo-label">Ask Arlo</span>
+            <div class="app-bar__vdivider" aria-hidden="true"></div>
+            <button class="app-bar__icon-btn" aria-label="Support">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.5"/>
+                <path d="M6 6a2 2 0 1 1 2.5 1.936C8 8.2 8 8.7 8 9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="8" cy="11.5" r="0.75" fill="white"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+          <!-- Utility icons -->
+          <div class="app-bar__icons">
+            <button class="app-bar__icon-btn" aria-label="Notifications, 3 new" style="position:relative;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 1.5A4.5 4.5 0 0 1 12.5 6v2.5l1 2h-11l1-2V6A4.5 4.5 0 0 1 8 1.5z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="app-bar__badge">3</span>
+            </button>
+            <button class="app-bar__icon-btn" aria-label="Settings">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.5" stroke="white" stroke-width="1.5"/>
+                <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="app-bar__icon-btn" aria-label="Data">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="1" y="8" width="3" height="7" rx="1" fill="white"/>
+                <rect x="6.5" y="5" width="3" height="10" rx="1" fill="white"/>
+                <rect x="12" y="1" width="3" height="14" rx="1" fill="white"/>
+              </svg>
+            </button>
+            <button class="app-bar__icon-btn app-bar__icon-btn--pill" aria-label="Profile">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="5.5" r="3" stroke="white" stroke-width="1.5"/>
+                <path d="M2 14.5c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ── PAGE CONTENT ──────────────────────────────────────────── -->
+  <div class="page-content">
+
+    <!-- SERVICE BAR -->
+    <div class="service-bar">
+
+      <!-- Row 1: Identity + date + info -->
+      <div class="service-bar__header">
+        <div class="service-bar__avatar" style="background:#64abfb;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 3c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 11.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="white"/>
+          </svg>
+        </div>
+        <div class="service-bar__text">
+          <span class="service-bar__title">Industry Landscape</span>
+          <span class="service-bar__subtitle">ChatGPT Ads · adthena.com · United Kingdom</span>
+        </div>
+        <div class="service-bar__actions">
+          <div class="service-bar__date">
+            <svg width="14" height="15" viewBox="0 0 14 15" fill="none" aria-hidden="true">
+              <rect x="0.75" y="2.25" width="12.5" height="11.5" rx="1.75" stroke="#2f78bd" stroke-width="1.5"/>
+              <path d="M0.75 5.75h12.5" stroke="#2f78bd" stroke-width="1.5"/>
+              <path d="M4 1v2.5M10 1v2.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span class="service-bar__date-label">Last 30 Days</span>
+          </div>
+          <button class="service-bar__info-btn" aria-label="Page information">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="8.25" stroke="#3079bd" stroke-width="1.5"/>
+              <path d="M10 9v5" stroke="#3079bd" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="10" cy="6.5" r="0.875" fill="#3079bd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 2: Tab navigation -->
+      <div class="service-bar__tabs">
+        <div class="tab-item tab-item--active">Overview</div>
+        <div class="tab-item">Advertisers</div>
+        <div class="tab-item">
+          Keywords
+          <span class="tab-item__counter">12</span>
+        </div>
+        <div class="tab-item">Ads</div>
+        <div class="tab-item">Intent Topics</div>
+      </div>
+
+      <!-- Row 3: Filter bar -->
+      <div class="service-bar__filters">
+        <div class="service-bar__filter-row">
+          <button class="service-bar__filter-btn">
+            All Industries
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="service-bar__filter-btn">
+            All Countries
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="service-bar__filter-spacer"></div>
+          <button class="service-bar__filter-btn">
+            Saved Filters
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+    <!-- end .service-bar -->
+
+  </div>
+  <!-- end .page-content -->
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 20.784 20.41" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 686">
+<mask id="mask0_0_18" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="21" height="21">
+<rect id="Rectangle 1205" x="8.6639e-06" y="9.75723" width="15.7825" height="13.5532" transform="rotate(-38.1871 8.6639e-06 9.75723)" fill="var(--fill-0, #D9D9D9)"/>
+</mask>
+<g mask="url(#mask0_0_18)">
+<path id="Fill 18" fill-rule="evenodd" clip-rule="evenodd" d="M8.94859 18.7647L19.2249 10.2309L17.7319 8.12926C14.1117 3.07881 8.64287 -0.35402 2.57468 -1.20514C1.92949 2.20494 2.09963 5.81549 3.23361 9.33936C4.13239 12.1324 5.66363 14.5402 7.41965 16.853L8.51987 18.3003" fill="var(--fill-0, white)"/>
+</g>
+</g>
+</svg>

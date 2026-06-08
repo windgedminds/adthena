@@ -1,0 +1,154 @@
+TOGGLE COMPONENT
+================
+Adthena Design System — Inputters
+Figma node: 167:1041 (file: ugMYx2Jf3KY7uZmha2U0WP)
+Built: 2026-06-01
+
+
+OVERVIEW
+--------
+A binary on/off control that gives users immediate feedback of a state
+change without requiring a form submission. Used to toggle features,
+preferences, and settings on/off.
+
+Supports 8 visual states across 2 values (On / Off) and 4 interaction
+states (Default, Hovered, Pressed, Disabled).
+
+
+DIMENSIONS
+----------
+Track       35 × 20 px, border-radius: 200px (full pill)
+Thumb       16 × 16 px, border-radius: 50%, offset 2px from near edge
+Thumb — Off position   left: 2px
+Thumb — On  position   left: 17px
+Transition  background 0.18s ease, left 0.18s ease
+
+
+DESIGN TOKENS
+-------------
+Token                    Value            Usage
+-------------------------------------------------------
+primary.main             #0c8dea          Track — On Default
+Brand/Mid blue (hover)   #007DB8          Track — On Hovered
+Brand/Navy               #093C6B          Track — On Pressed
+Off default track        #7A8FAB          Track — Off Default
+Off hover/pressed track  #6B7FA0          Track — Off Hovered & Pressed
+Disabled off track       #C8D3E0          Track — Off Disabled
+Disabled on track        #70AECE          Track — On Disabled
+Background/White         #FFFFFF          Thumb — all states
+Thumb shadow             0 1px 3px rgba(0,0,0,0.25)   Enabled states only
+
+
+ALL STATES
+----------
+Value   State       Track colour    Thumb position
+-----   ---------   -----------     --------------
+Off     Default     #7A8FAB         left: 2px
+Off     Hovered     #6B7FA0         left: 2px
+Off     Pressed     #6B7FA0         left: 2px
+Off     Disabled    #C8D3E0         left: 2px  (no thumb shadow)
+On      Default     #0c8dea         left: 17px
+On      Hovered     #007DB8         left: 17px
+On      Pressed     #093C6B         left: 17px
+On      Disabled    #70AECE         left: 17px (no thumb shadow)
+
+
+CSS CLASSES (static / display use)
+------------------------------------
+.ds-toggle                 Base pill track — 35×20px, Off Default state
+.ds-toggle__thumb          White circle inside the track
+.ds-toggle--on             On state — blue track (#0c8dea), thumb slides right
+.ds-toggle--hovered        Hover appearance override (for static demos)
+.ds-toggle--pressed        Pressed appearance override (for static demos)
+.ds-toggle--disabled       Muted track, no pointer, thumb shadowless
+
+Combine modifiers as needed:
+  .ds-toggle--on.ds-toggle--hovered   → On + Hovered
+  .ds-toggle--on.ds-toggle--pressed   → On + Pressed  (navy #093C6B)
+  .ds-toggle--on.ds-toggle--disabled  → On + Disabled (light blue #70AECE)
+
+
+CSS CLASSES (interactive / real checkbox)
+------------------------------------------
+.ds-toggle-input           Native <input type="checkbox"> styled to match.
+                           Use for real interactivity — hover, :checked,
+                           :active, :disabled states are CSS-driven.
+
+.ds-toggle-label           Flex label wrapping .ds-toggle-input + text
+.ds-toggle-label--disabled Muted label text (#9e9e9e) for disabled rows
+
+
+HTML MARKUP — STATIC (display only)
+--------------------------------------
+Off Default:
+  <div class="ds-toggle">
+    <div class="ds-toggle__thumb"></div>
+  </div>
+
+On Default:
+  <div class="ds-toggle ds-toggle--on">
+    <div class="ds-toggle__thumb"></div>
+  </div>
+
+On Pressed:
+  <div class="ds-toggle ds-toggle--on ds-toggle--pressed">
+    <div class="ds-toggle__thumb"></div>
+  </div>
+
+Off Disabled:
+  <div class="ds-toggle ds-toggle--disabled">
+    <div class="ds-toggle__thumb"></div>
+  </div>
+
+
+HTML MARKUP — INTERACTIVE (real checkbox)
+-------------------------------------------
+Enabled (off by default):
+  <label class="ds-toggle-label">
+    <input type="checkbox" class="ds-toggle-input">
+    Feature label
+  </label>
+
+Enabled (on by default):
+  <label class="ds-toggle-label">
+    <input type="checkbox" class="ds-toggle-input" checked>
+    Feature label
+  </label>
+
+Disabled off:
+  <label class="ds-toggle-label ds-toggle-label--disabled">
+    <input type="checkbox" class="ds-toggle-input" disabled>
+    Feature label
+  </label>
+
+Disabled on:
+  <label class="ds-toggle-label ds-toggle-label--disabled">
+    <input type="checkbox" class="ds-toggle-input" disabled checked>
+    Feature label
+  </label>
+
+
+USAGE GUIDELINES
+----------------
+- Use a Toggle for settings that take effect immediately (no Save button needed).
+- Always pair with a concise label that describes what the On state enables.
+- Do not use a Toggle in place of a Checkbox inside a form that requires
+  explicit submission — use Checkbox instead.
+- Disabled toggles should still show the current value (on/off) so the user
+  understands the locked state.
+- Keep label text short — ideally a noun phrase (e.g. "Gap Analysis",
+  "Show Competitors", "Weekly Digest").
+
+
+FIGMA VARIANTS
+--------------
+Prop    Values
+------  --------------------------------
+on      Yes | No
+state   Default | Hovered | Pressed | Disabled
+
+
+STYLEGUIDE LOCATION
+-------------------
+Components → Inputters → Toggle
+Panel ID: comp-panel-toggle

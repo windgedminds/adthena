@@ -1,0 +1,242 @@
+/* ==========================================================================
+   Multi-Chart Lines  —  .mclc
+   Design System component: stacked metric rows with KPI tile + sparkline chart
+   ========================================================================== */
+
+/* Root card */
+.mclc {
+  background: #ffffff;
+  border-radius: 12px;
+  padding-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Inner column: gap between rows */
+.mclc__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 24px 0;
+}
+
+/* Single metric row */
+.mclc__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 93px;
+}
+
+/* ── KPI tile (left) ───────────────────────────────────────────────────── */
+
+.mclc__kpi {
+  width: 148px;
+  height: 68px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  box-sizing: border-box;
+  /* Set `color` on this element — label, value and delta all inherit it */
+}
+
+.mclc__kpi-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.mclc__kpi-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 12px;
+  color: inherit;
+}
+
+.mclc__kpi-value {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 40px;
+  font-weight: 300;    /* Light */
+  letter-spacing: -2px;
+  line-height: 1.235;
+  color: inherit;
+}
+
+.mclc__kpi-delta {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: -0.22px;
+}
+
+.mclc__kpi-delta--up   { color: #40af46; }
+.mclc__kpi-delta--down { color: #de5a5a; }
+
+/* Row divider */
+.mclc__divider {
+  height: 1px;
+  background: #C0CDE0;
+  flex-shrink: 0;
+}
+
+/* ── Chart area (right) ────────────────────────────────────────────────── */
+
+.mclc__chart {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 93px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* Y-axis label column */
+.mclc__y-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding-top: 11px;    /* aligns top label with SVG data area */
+  padding-bottom: 0;
+  font-family: 'Open Sans', sans-serif;
+  font-stretch: 75%;    /* Condensed */
+  font-size: 13px;
+  font-weight: 400;
+  color: #858585;
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Canvas: contains ghost bands + SVG */
+.mclc__canvas-wrap {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+/* Ghost band columns (4 vertical bars, 10% opacity) */
+.mclc__bands {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 0 40px;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.mclc__band {
+  width: 32px;
+  background: #d9d9d9;
+}
+
+/* SVG sparkline — drawn by JS into this element via data-* attributes */
+.mclc__svg {
+  position: absolute;
+  top: 20px;            /* clears the Y max label */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 20px);
+  overflow: visible;
+}
+
+/* ── Hover interaction ─────────────────────────────────────────────────── */
+
+/* Dot that follows the cursor along the line */
+.mclc__hover-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 4;
+}
+
+/* Tooltip above the dot */
+.mclc__hover-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+  z-index: 5;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── X-axis date labels ────────────────────────────────────────────────── */
+
+.mclc__x-axis {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* Invisible spacer that mirrors the KPI tile width */
+.mclc__x-kpi-spacer {
+  width: 148px;
+  flex-shrink: 0;
+}
+
+/* Mirrors the chart flex row */
+.mclc__x-chart {
+  display: flex;
+  gap: 8px;
+  flex: 1 0 0;
+  min-width: 0;
+}
+
+/* Invisible spacer that mirrors the widest y-axis label, keeping dates aligned with canvas */
+.mclc__x-y-spacer {
+  font-family: 'Open Sans', sans-serif;
+  font-stretch: 75%;
+  font-size: 13px;
+  visibility: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mclc__x-labels {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+}
+
+.mclc__x-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  color: #858585;
+  white-space: nowrap;
+}
+
+/* ── Colour themes (apply via `color` on .mclc__kpi) ──────────────────── */
+/*
+  Purple  — Mentions:   color: #6848c6
+  Blue    — Citations:  color: #3785dd
+  Teal    — Links:      color: #36AEBA
+  Green   — Growth:     color: #40af46
+  Any DS accent colour cascades automatically to label, value and delta.
+*/

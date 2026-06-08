@@ -1,0 +1,22 @@
+.main-nav { width: 222px; }
+.main-nav__section { background: #fcfdff; border-radius: 8px; padding: 8px; }
+.main-nav__item { display: flex; flex-direction: row; align-items: center; height: 32px; padding: 4px 8px; border-radius: 4px; cursor: pointer; gap: 4px; }
+.main-nav__item:hover { background: rgba(0,0,0,0.04); }
+.main-nav__item--active { background: #eaf4ff; }
+.main-nav__active-section { background: #eaf4ff; border-radius: 8px; }
+.main-nav__active-section .main-nav__item--active { background: transparent; }
+.main-nav__item-icon { width: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #6b7a99; }
+.main-nav__item--active .main-nav__item-icon { color: #3079bd; }
+.main-nav__item-label { font-family: 'Open Sans', sans-serif; font-size: 12px; font-weight: 600; color: #2b2b2b; line-height: normal; flex: 1; }
+.main-nav__item--active .main-nav__item-label { color: #3079bd; }
+.main-nav__separator { height: 16px; display: flex; align-items: center; }
+.main-nav__separator::after { content: ''; display: block; width: 100%; height: 1px; background: #e4e9ef; }
+.main-nav__subitems { display: flex; flex-direction: column; padding: 4px 0 8px; }
+.main-nav__subitem { display: flex; flex-direction: row; height: 24px; border-radius: 4px; cursor: pointer; align-items: center; }
+.main-nav__subitem:hover { background: rgba(0,0,0,0.04); }
+.main-nav__subitem-bar { width: 28px; flex-shrink: 0; display: flex; justify-content: flex-start; padding-left: 18px; align-items: center; position: relative; height: 100%; }
+.main-nav__subitem-bar::before { content: ''; position: absolute; left: 19px; top: 0; bottom: 0; width: 1.5px; background: rgba(48,121,189,0.2); transform: translateX(-50%); border-radius: 1px; }
+.main-nav__subitem-bar-line { width: 2px; height: 16px; border-radius: 1px; background: transparent; position: relative; z-index: 1; }
+.main-nav__subitem--active .main-nav__subitem-bar-line { background: #3079bd; }
+.main-nav__subitem-label { font-family: 'Open Sans', sans-serif; font-size: 12px; font-weight: 400; color: #181818; flex: 1; padding: 6px 4px; line-height: 14px; }
+.main-nav__subitem--active .main-nav__subitem-label { color: #063059; font-weight: 600; }

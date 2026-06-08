@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChatGPT Ads — Adthena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75,300..700;0,100,300..700;1,75,300..700;1,100,300..700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Open Sans',Helvetica,sans-serif;background:#e5eef5;min-height:100vh}
+
+    /* ── APP BAR ──────────────────────────────────────── */
+    .app-bar{
+      position:fixed;top:0;left:0;right:0;z-index:50;
+      background:#063059;height:50px;
+      display:flex;align-items:center;
+      padding:0 16px 0 8px;
+      border-bottom:1px solid rgba(0,0,0,0.12);
+      width:100%;
+    }
+    .app-bar__content{
+      display:flex;align-items:center;height:36px;width:100%;
+    }
+    .app-bar__left{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .app-bar__center{flex:1;min-width:0}
+    .app-bar__right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .app-bar__hamburger{
+      background:none;border:none;cursor:pointer;
+      padding:5px;width:32px;height:30px;
+      display:flex;align-items:center;justify-content:center;
+      border-radius:4px;transition:background 0.15s;
+    }
+    .app-bar__hamburger:hover{background:rgba(255,255,255,0.12)}
+    .app-bar__vdivider{
+      width:1px;height:20px;
+      background:rgba(255,255,255,0.18);flex-shrink:0;
+    }
+    .app-bar__domain-btn{
+      display:flex;align-items:center;gap:6px;
+      padding:0 10px;height:30px;
+      background:none;border:none;cursor:pointer;
+      border-radius:6px;transition:background 0.15s;font-family:inherit;
+    }
+    .app-bar__domain-btn:hover{background:rgba(255,255,255,0.1)}
+    .app-bar__domain-text{
+      color:white;font-family:inherit;
+      font-size:13px;font-weight:600;white-space:nowrap;
+    }
+    .app-bar__arlo-section{display:flex;align-items:center;gap:8px}
+    .app-bar__arlo-label{
+      color:white;font-family:inherit;
+      font-size:14px;font-weight:600;white-space:nowrap;
+    }
+    .app-bar__icons{display:flex;align-items:center;gap:8px}
+    .app-bar__icon-btn{
+      width:22px;height:22px;border:none;
+      border-radius:6px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      padding:3px;background:transparent;
+      transition:background 0.15s;position:relative;flex-shrink:0;
+    }
+    .app-bar__icon-btn:hover{background:rgba(255,255,255,0.15)}
+    .app-bar__icon-btn--pill{border-radius:200px}
+    .app-bar__badge{
+      position:absolute;top:-5px;right:-5px;
+      width:14px;height:14px;
+      background:#e74c3c;border-radius:50%;
+      border:2px solid #063059;
+      font-family:inherit;font-size:8px;font-weight:700;color:white;
+      display:flex;align-items:center;justify-content:center;line-height:1;
+    }
+
+    /* ── SIDEBAR ──────────────────────────────────────── */
+    .sidebar{
+      position:fixed;top:50px;left:0;bottom:0;z-index:40;
+      width:254px;overflow-y:auto;background:#e5eef5;
+    }
+    .nav-card{
+      margin:24px 16px 0;background:#fff;border-radius:12px;padding:12px 8px 16px;
+    }
+    .nav-item{
+      display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;
+      border-radius:8px;cursor:pointer;transition:background 0.15s;
+    }
+    .nav-item:hover{background:#f0f6ff}
+    .nav-item--active{background:#e9f4ff}
+    .nav-item__icon{width:18px;height:18px;flex-shrink:0;opacity:0.7}
+    .nav-item__label{font-size:12px;font-weight:600;color:#2b2b2b;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nav-item--active .nav-item__label{color:#2f78bd}
+    .nav-separator{height:1px;background:rgba(0,0,0,0.08);margin:6px 4px}
+
+    .nav-sub{position:relative;padding-left:20px;margin-top:2px}
+    .nav-sub::before{
+      content:'';position:absolute;left:19px;top:0;bottom:8px;
+      width:1px;background:#d4d8e2;
+    }
+    .nav-sub-item{
+      display:flex;align-items:center;gap:0;height:24px;padding:0 8px;
+      border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#485982;
+      transition:background 0.15s;position:relative;margin-bottom:1px;
+    }
+    .nav-sub-item:hover{background:#f0f6ff}
+    .nav-sub-item--active{color:#2f78bd;background:#eaf4ff}
+    .nav-sub-item::before{
+      content:'';position:absolute;left:-2px;top:50%;transform:translateY(-50%);
+      width:8px;height:1px;background:#d4d8e2;
+    }
+    .nav-sub-item--active::before{background:#2f78bd}
+
+    .nav-subsub{padding-left:16px;position:relative}
+    .nav-subsub::before{
+      content:'';position:absolute;left:15px;top:0;bottom:4px;
+      width:1px;background:#d4d8e2;
+    }
+    .nav-subsub-item{
+      display:flex;align-items:center;height:24px;padding:0 8px;
+      border-radius:6px;cursor:pointer;font-size:12px;font-weight:400;color:#485982;
+      transition:background 0.15s;position:relative;margin-bottom:1px;
+    }
+    .nav-subsub-item:hover{background:#f0f6ff;font-weight:600}
+    .nav-subsub-item--active{color:#2f78bd;font-weight:600}
+    .nav-subsub-item::before{
+      content:'';position:absolute;left:-2px;top:50%;transform:translateY(-50%);
+      width:8px;height:1px;background:#d4d8e2;
+    }
+    .nav-subsub-item--active::before{background:#2f78bd}
+
+    /* ── CONTENT AREA ─────────────────────────────────── */
+    .content{
+      padding-top:74px;padding-left:278px;padding-right:24px;padding-bottom:40px;
+      background:#e5eef5;min-height:100vh;
+    }
+    .content-col{display:flex;flex-direction:column;gap:16px;max-width:1200px;margin:0 auto}
+
+    /* ── SERVICE BAR ──────────────────────────────────── */
+    .service-bar{background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:16px}
+    .sb-identity{display:flex;align-items:center;gap:10px}
+    .sb-icon{
+      width:40px;height:40px;border-radius:200px;background:#64abfb;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .sb-icon img{width:20px;height:20px}
+    .sb-titles{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+    .sb-title{font-size:16px;font-weight:600;color:#000;white-space:nowrap;line-height:150%}
+    .sb-subtitle{font-size:12px;font-weight:400;color:#424242;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sb-date{
+      display:flex;align-items:center;gap:8px;width:220px;height:40px;
+      background:#f5f5f5;border-radius:8px;border:1px solid rgba(0,0,0,0.12);
+      padding:0 10px;flex-shrink:0;cursor:pointer;
+    }
+    .sb-date-label{font-size:13px;font-weight:400;color:#181818;flex:1;white-space:nowrap}
+
+    .tab-rail{
+      display:flex;align-items:center;gap:4px;height:42px;
+      background:#f5f5f5;border-radius:200px;padding:6px;overflow-x:auto;
+    }
+    .tab{
+      height:30px;padding:0 16px;border-radius:200px;border:none;cursor:pointer;
+      font-family:inherit;font-size:14px;font-weight:600;white-space:nowrap;
+      transition:background 0.15s;outline:none;
+    }
+    .tab--active{background:#64aafa;color:#fff}
+    .tab--inactive{background:#fff;color:#858585}
+    .tab--inactive:hover{background:#f0f6ff}
+
+    .filter-bar{
+      background:#f5f5f5;border-radius:12px;padding:8px;
+      display:flex;align-items:center;gap:4px;
+    }
+    .filter-btn{
+      display:flex;align-items:center;gap:4px;height:30px;padding:0 12px;
+      border-radius:6px;border:none;cursor:pointer;background:transparent;
+      font-family:inherit;font-size:14px;font-weight:600;color:#2f78bd;
+      transition:background 0.15s;outline:none;white-space:nowrap;
+    }
+    .filter-btn:hover{background:#f0f6ff}
+    .filter-spacer{flex:1}
+
+    /* ── KPI ROW ──────────────────────────────────────── */
+    .kpi-row{display:flex;gap:16px}
+    .kpi-card{
+      flex:1;min-width:160px;background:#fff;border-radius:12px;
+      padding:16px;display:flex;flex-direction:column;gap:12px;
+    }
+    .kpi-card--purple{background:#f8f8ff}
+    .kpi-hdr{display:flex;align-items:flex-start;justify-content:space-between;width:100%}
+    .kpi-label{
+      font-size:10px;font-weight:600;color:#485982;text-transform:uppercase;
+      line-height:14px;white-space:pre-line;letter-spacing:0.02em;
+    }
+    .kpi-info{
+      width:16px;height:16px;border-radius:50%;border:1.5px solid #6477a2;
+      display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;
+      color:#6477a2;cursor:pointer;flex-shrink:0;transition:background 0.15s;margin-top:1px;
+    }
+    .kpi-info:hover{background:#eaeff5}
+    .kpi-body{display:flex;flex-direction:column;gap:8px;width:100%}
+    .kpi-value-row{display:flex;align-items:center;gap:6px;width:100%}
+    .kpi-left{display:flex;align-items:center;gap:4px}
+    .kpi-accent{width:4px;align-self:stretch;border-radius:200px;background:#b1d1f6;min-height:36px}
+    .kpi-accent--purple{background:#ccc1ec}
+    .kpi-num{font-size:44px;font-weight:300;letter-spacing:-3px;line-height:44px;color:#3589e9;white-space:nowrap}
+    .kpi-num--purple{color:#6848c6}
+    .kpi-pct{font-size:16px;font-weight:400;color:#64abfb;white-space:nowrap;line-height:1}
+    .kpi-change{font-size:14px;font-weight:400;white-space:nowrap;line-height:1}
+    .up{color:#40af46}
+    .down{color:#de5a5a}
+    .flat{color:#6477a2}
+    .kpi-spark{flex:1;min-width:0;height:44px;align-self:center;margin-left:2px}
+    .kpi-sublabel{font-size:12px;font-weight:300;color:#27365b;line-height:14px}
+
+    /* ── CONTENT CARD ─────────────────────────────────── */
+    .card{background:#fff;border-radius:12px;padding:24px}
+    .card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+    .card-icon{
+      width:32px;height:32px;border-radius:50%;background:#93a1b6;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .card-icon img{width:16px;height:16px}
+    .card-titles{flex:1;display:flex;flex-direction:column;gap:2px}
+    .card-title{font-size:16px;font-weight:600;color:rgba(0,0,0,0.87);line-height:150%}
+    .card-subtitle{font-size:13px;font-weight:400;color:#6b6b6b;line-height:14px}
+    .card-actions{display:flex;align-items:center;gap:10px}
+    .card-action-img{width:20px;height:20px;cursor:pointer;opacity:0.65;transition:opacity 0.15s}
+    .card-action-img:hover{opacity:1}
+
+    /* ── CHART CONTAINER ──────────────────────────────── */
+    .chart-wrap{position:relative;height:300px;width:100%}
+
+    /* ── LEGEND ───────────────────────────────────────── */
+    .chart-legend{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:14px}
+    .legend-item{display:flex;align-items:center;gap:6px}
+    .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .legend-label{font-size:13px;font-weight:300;color:#38476a;font-stretch:condensed}
+
+    /* ── CALLOUT ──────────────────────────────────────── */
+    .callout{
+      background:#f7faff;border-radius:12px;padding:12px;
+      display:flex;align-items:flex-start;gap:8px;margin-top:16px;
+    }
+    .callout-icon{
+      width:28px;height:28px;border-radius:50%;background:#b0d1f6;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .callout-icon img{width:14px;height:14px}
+    .callout-text{font-size:13px;color:#6b6b6b;line-height:1.5;flex:1}
+    .callout-text strong{font-weight:600;color:#485982}
+
+    /* ── CHEVRON ICON ─────────────────────────────────── */
+    .chev{display:inline-block}
+  </style>
+</head>
+<body>
+
+<!-- ═══ APP BAR ═══════════════════════════════════════════════════════════ -->
+<nav class="app-bar" aria-label="Main navigation">
+  <div class="app-bar__content">
+
+    <!-- Left: hamburger + divider + logo -->
+    <div class="app-bar__left">
+      <button class="app-bar__hamburger" aria-label="Toggle sidebar">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M0 1.5h16M0 5.5h16M0 9.5h16"/></svg>
+      </button>
+      <div class="app-bar__vdivider" aria-hidden="true"></div>
+      <!-- Adthena wordmark SVG -->
+      <div aria-label="Adthena">
+        <svg width="113" height="26" viewBox="0 0 113 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M40.2884 15.4986H46.6049L43.4567 7.75058L40.2884 15.4986ZM38.1286 20.7466H36.4L43.3921 5.14664H43.6104L50.5143 20.7466H48.7864L47.1813 16.8731H39.7336L38.1286 20.7466Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M52.3366 15.993C52.3366 16.5311 52.4224 17.0344 52.5939 17.5037C52.7652 17.9729 53.0085 18.3798 53.3238 18.7246C53.6382 19.0695 54.0185 19.3423 54.4643 19.5419C54.9091 19.7421 55.4128 19.8423 55.9751 19.8423C56.5224 19.8423 57.0332 19.7421 57.5062 19.5419C57.9781 19.3423 58.386 19.0695 58.7287 18.7246C59.0711 18.3798 59.3382 17.9729 59.5305 17.5037C59.7221 17.0344 59.8179 16.5311 59.8179 15.993C59.8179 15.4551 59.7221 14.9514 59.5305 14.4822C59.3382 14.0133 59.0711 13.606 58.7287 13.261C58.386 12.9168 57.9781 12.6439 57.5062 12.4432C57.0332 12.2438 56.5224 12.1437 55.9751 12.1437C55.4128 12.1437 54.9091 12.2438 54.4643 12.4432C54.0185 12.6439 53.6382 12.9168 53.3238 13.261C53.0085 13.606 52.7652 14.0133 52.5939 14.4822C52.4224 14.9514 52.3366 15.4551 52.3366 15.993ZM61.1133 20.835H59.7566V19.2213H59.7157C59.496 19.5523 59.2358 19.8352 58.9352 20.0699C58.6335 20.3046 58.3179 20.4976 57.9889 20.6491C57.6609 20.8015 57.3218 20.9108 56.9719 20.9803C56.6223 21.0487 56.2904 21.0836 55.9756 21.0836C55.2214 21.0836 54.5335 20.9558 53.9096 20.7012C53.2862 20.4454 52.7486 20.0904 52.2967 19.6347C51.844 19.1796 51.4915 18.642 51.2381 18.0213C50.9841 17.4 50.8582 16.7244 50.8582 15.9931C50.8582 15.2622 50.9841 14.5856 51.2381 13.965C51.4915 13.344 51.844 12.806 52.2967 12.3502C52.7486 11.8953 53.2862 11.5405 53.9096 11.285C54.5335 11.0299 55.2214 10.902 55.9756 10.902C56.2904 10.902 56.6223 10.9366 56.9719 11.0055C57.3218 11.075 57.6609 11.1851 57.9889 11.3367C58.3179 11.4885 58.6335 11.6816 58.9352 11.916C59.2358 12.151 59.496 12.4332 59.7157 12.7646H59.7566V5.19055H61.1133V20.835Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M69.0471 12.392H66.2726V18.1036C66.2726 18.4628 66.3061 18.7554 66.3747 18.9832C66.4433 19.211 66.5394 19.387 66.6631 19.5112C66.7861 19.6346 66.9339 19.7214 67.105 19.7697C67.276 19.8181 67.4644 19.8423 67.6704 19.8423C67.9026 19.8423 68.1427 19.8077 68.3895 19.7386C68.6357 19.6694 68.8625 19.5799 69.0677 19.4694L69.1291 20.732C68.6216 20.9661 68.0125 21.0836 67.3003 21.0836C67.04 21.0836 66.7691 21.0487 66.4889 20.9802C66.2068 20.9107 65.9505 20.7803 65.718 20.5868C65.4846 20.3938 65.293 20.1318 65.142 19.8005C64.9909 19.4694 64.9157 19.0347 64.9157 18.497V12.392H62.8817V11.1503H64.9157V8.41852H66.2726V11.1503H69.0471V12.392Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M70.8964 5.19055H72.2527V12.7022H72.2935C72.4446 12.4407 72.6366 12.1985 72.8688 11.9781C73.1022 11.7577 73.3619 11.5678 73.6502 11.4088C73.9373 11.2507 74.2426 11.1263 74.5646 11.0364C74.8861 10.9469 75.2044 10.9019 75.5202 10.9019C76.7536 10.9019 77.6643 11.23 78.2542 11.8852C78.8421 12.5406 79.1373 13.4753 79.1373 14.689V20.835H77.781V15.4758C77.781 14.3995 77.5956 13.5752 77.2255 13.0024C76.8566 12.4299 76.1706 12.1437 75.171 12.1437C75.1026 12.1437 74.9104 12.1715 74.5949 12.2265C74.2803 12.2816 73.9483 12.4331 73.5984 12.6816C73.2495 12.93 72.9374 13.3024 72.664 13.799C72.3893 14.2961 72.2527 14.9857 72.2527 15.8687V20.835H70.8964V5.19055Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M89.8033 15.2477C89.8033 14.3239 89.5287 13.5752 88.9813 13.0025C88.4333 12.43 87.6658 12.1437 86.6797 12.1437C86.2412 12.1437 85.8158 12.2301 85.4054 12.4024C84.9941 12.5754 84.6347 12.806 84.3263 13.0954C84.0179 13.3855 83.7713 13.7164 83.5866 14.0891C83.4013 14.4616 83.3088 14.8481 83.3088 15.2477H89.8033ZM83.2676 16.3651C83.3088 16.8484 83.4256 17.3034 83.6171 17.7312C83.8094 18.1593 84.0622 18.5278 84.3771 18.8383C84.6927 19.1488 85.0559 19.3939 85.4672 19.573C85.8774 19.7524 86.3233 19.8423 86.803 19.8423C87.5289 19.8423 88.1562 19.6735 88.683 19.3348C89.2111 18.9973 89.6105 18.6073 89.8852 18.1657L90.9341 19.0347C90.3579 19.7666 89.7238 20.2908 89.0325 20.6078C88.3403 20.9245 87.5972 21.0836 86.803 21.0836C86.0899 21.0836 85.4292 20.9557 84.8193 20.7011C84.209 20.4454 83.6859 20.0903 83.2471 19.6347C82.8083 19.1795 82.4631 18.6419 82.2094 18.0212C81.9557 17.4 81.8289 16.7243 81.8289 15.993C81.8289 15.2621 81.9522 14.5855 82.1991 13.9649C82.4459 13.3439 82.7877 12.8059 83.2265 12.3501C83.6652 11.8952 84.1789 11.5404 84.7682 11.2849C85.357 11.0298 85.994 10.9019 86.6797 10.9019C87.4053 10.9019 88.0567 11.0334 88.6318 11.2952C89.2073 11.5577 89.691 11.9056 90.0805 12.3404C90.4713 12.7749 90.7693 13.2855 90.9749 13.8719C91.1803 14.4583 91.2833 15.0823 91.2833 15.7445V16.3651H83.2676Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M95.0454 11.1503C95.0729 11.4125 95.0893 11.6715 95.0968 11.9262C95.1037 12.1815 95.1071 12.4406 95.1071 12.7022H95.148C95.299 12.4406 95.491 12.1984 95.7235 11.978C95.9567 11.7576 96.2166 11.5678 96.5047 11.4087C96.7921 11.2507 97.097 11.1263 97.4191 11.0364C97.7411 10.9468 98.0592 10.9019 98.375 10.9019C99.6084 10.9019 100.519 11.2299 101.109 11.8852C101.697 12.5405 101.991 13.4753 101.991 14.6889V20.8349H100.635V15.4758C100.635 14.3994 100.45 13.5752 100.08 13.0023C99.7111 12.4299 99.0253 12.1436 98.0254 12.1436C97.9568 12.1436 97.7652 12.1715 97.4496 12.2264C97.1348 12.2816 96.8027 12.4331 96.4532 12.6815C96.1039 12.9299 95.7921 13.3024 95.5184 13.7989C95.2442 14.2961 95.1071 14.9856 95.1071 15.8687V20.8349H93.7505V13.2817C93.7505 13.0198 93.7406 12.6889 93.7199 12.2883C93.6993 11.8886 93.6752 11.5092 93.6479 11.1503H95.0454Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M110.644 16.0135C110.301 16.0135 109.873 16.0314 109.359 16.0653C108.845 16.0999 108.353 16.1829 107.88 16.3136C107.407 16.445 107.003 16.648 106.667 16.9239C106.331 17.2001 106.163 17.5794 106.163 18.0624C106.163 18.3798 106.228 18.6523 106.359 18.8798C106.489 19.1072 106.664 19.2933 106.883 19.4381C107.102 19.5834 107.345 19.6867 107.612 19.7489C107.88 19.8106 108.15 19.8422 108.424 19.8422C108.917 19.8422 109.346 19.7597 109.708 19.5937C110.071 19.4278 110.376 19.2041 110.623 18.9212C110.87 18.6384 111.052 18.3075 111.167 17.9276C111.284 17.5486 111.343 17.1449 111.343 16.7168V16.0135H110.644ZM111.343 14.8963V14.6476C111.343 12.9787 110.52 12.1436 108.876 12.1436C107.753 12.1436 106.773 12.5234 105.937 13.2817L105.115 12.309C106.019 11.3711 107.376 10.9019 109.184 10.9019C109.65 10.9019 110.099 10.9708 110.531 11.109C110.963 11.2471 111.335 11.4577 111.65 11.74C111.966 12.0228 112.219 12.3785 112.412 12.8059C112.603 13.2336 112.699 13.7442 112.699 14.3373V18.6622C112.699 19.0346 112.716 19.4247 112.75 19.8316C112.784 20.2389 112.822 20.5736 112.864 20.8349H111.548C111.507 20.6006 111.477 20.346 111.456 20.0698C111.435 19.7935 111.424 19.5249 111.424 19.2625H111.384C110.986 19.9112 110.517 20.3768 109.976 20.659C109.434 20.9419 108.773 21.0836 107.993 21.0836C107.568 21.0836 107.157 21.0247 106.76 20.9076C106.362 20.7904 106.009 20.6113 105.701 20.3695C105.392 20.1283 105.146 19.8316 104.961 19.48C104.776 19.128 104.683 18.7176 104.683 18.2488C104.683 17.4618 104.886 16.8446 105.29 16.3965C105.694 15.9483 106.201 15.6138 106.811 15.3929C107.42 15.1719 108.071 15.034 108.763 14.9786C109.456 14.9239 110.088 14.8963 110.664 14.8963H111.343Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 22.8909L9.81245 24.0115C9.64175 23.1359 9.55019 22.2335 9.55019 21.3083C9.55019 19.6522 9.83897 18.0634 10.3653 16.5876C9.03084 15.6612 7.86604 14.5054 6.92315 13.178L0 22.8909Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.7627 25.9467L23.5599 17.9904C21.9194 18.6768 20.1226 19.057 18.2395 19.057C15.9213 19.057 13.7352 18.4801 11.8111 17.4657C11.4163 18.6762 11.1995 19.9671 11.1995 21.3083C11.1995 22.3077 11.3213 23.2781 11.5448 24.2095L26.7627 25.9467Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M24.3224 15.9484L21.5003 8.91724L20.1061 9.35818C16.7502 10.4354 13.9466 12.7917 12.4327 15.9202C14.1618 16.861 16.1408 17.3965 18.2405 17.3965C19.9047 17.3965 21.4707 16.9881 23.0246 16.4418L23.9972 16.0992" fill="white"/><mask id="mask0_15_90" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="7" y="0" width="13" height="16"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.94653 6.10352e-05H19.4926V15.0282H7.94653V6.10352e-05Z" fill="white"/></mask><g mask="url(#mask0_15_90)"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.4926 7.88839L16.3164 6.10352e-05L7.94653 11.7421C8.76792 13.0192 9.81464 14.1339 11.0332 15.0283C12.7419 11.6145 15.7966 8.9974 19.4926 7.88839Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M10.3598 16.5908C9.02749 15.6657 7.86401 14.5117 6.92245 13.1869L5.31897 15.4375C6.09011 16.3338 6.9713 17.132 7.94377 17.8075C7.41807 19.2818 7.12999 20.8675 7.12999 22.5211C7.12999 22.9198 7.1503 23.3139 7.18345 23.7041L9.80798 24.0036C9.63756 23.1298 9.54586 22.2285 9.54586 21.3046C9.54586 19.651 9.83408 18.0647 10.3598 16.5908Z" fill="white"/></g></svg>
+      </div>
+    </div>
+
+    <!-- Center spacer -->
+    <div class="app-bar__center"></div>
+
+    <!-- Right controls -->
+    <div class="app-bar__right">
+
+      <!-- Domain / Location -->
+      <button class="app-bar__domain-btn" aria-label="Select domain and location">
+        <svg width="11" height="15" viewBox="0 0 11 15" fill="#5bb3f9" aria-hidden="true"><path d="M5.5 0C2.5 0 0 2.5 0 5.5c0 4.2 5.5 9.5 5.5 9.5S11 9.7 11 5.5C11 2.5 8.5 0 5.5 0zm0 7.5a2 2 0 110-4 2 2 0 010 4z"/></svg>
+        <span class="app-bar__domain-text">Domain / Location</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M1 1l4 4 4-4"/></svg>
+      </button>
+      <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+      <!-- Ask Arlo -->
+      <div class="app-bar__arlo-section">
+        <svg width="27" height="24" viewBox="0 0 27 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;flex-shrink:0"><path d="M2.18565 2.89709C2.41973 2.53971 2.89921 2.43976 3.25658 2.67385L11.393 8.00326L7.28353 14.2772L4.12687 12.2096C1.01925 10.174 0.150139 6.00471 2.18565 2.89709Z" fill="#FFC25E"/><path d="M11.393 8.00326L7.28353 14.2772L4.12696 12.2096L4.74338 11.2685L6.95886 12.7197L9.83548 8.32793L2.94397 3.81393C1.49038 6.36422 2.25427 9.63814 4.74338 11.2685L4.12696 12.2096L3.84197 12.0124C0.967759 9.91433 0.213842 5.90745 2.18571 2.897C2.41979 2.53972 2.89916 2.4398 3.2565 2.67379L11.393 8.00326Z" fill="#063059"/><path d="M19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045Z" fill="#FFC25E"/><path d="M9.99985 3.11085C9.25742 2.77266 8.57367 2.3619 7.89928 1.83804V4.71392C8.45178 4.01571 9.17323 3.4618 9.99985 3.11085ZM19.5054 12.2023C21.8149 12.2023 23.6873 10.3299 23.6873 8.02041C23.6873 5.71063 21.8152 3.83854 19.5054 3.83854C18.2301 3.83854 17.046 4.40521 16.2457 5.3988C16.0201 5.68852 15.5798 5.69589 15.3465 5.40617C14.5465 4.40833 13.3599 3.83854 12.0811 3.83854C9.77136 3.83854 7.89928 5.71063 7.89928 8.02041C7.89928 10.3299 9.77165 12.2023 12.0811 12.2023C13.3503 12.2023 14.5366 11.6401 15.3408 10.6417C15.5665 10.352 16.0067 10.3446 16.24 10.6346C17.0443 11.6373 18.2332 12.2023 19.5054 12.2023ZM18.831 13.3084L16.1995 15.9402C15.9753 16.1644 15.6113 16.1644 15.3871 15.9402L12.7555 13.3084C10.9007 13.5448 9.06267 12.7964 7.89928 11.3269V13.5899C7.89928 18.3821 11.8223 22.3051 16.6145 22.3051H18.3247V18.978C18.3247 15.9589 20.6969 13.4558 23.6873 13.2696V11.3269C22.5239 12.7964 20.6858 13.5448 18.831 13.3084ZM14.0465 12.9748L15.7933 14.7213L17.5401 12.9748C16.8867 12.7145 16.2936 12.329 15.7933 11.8437C15.2929 12.329 14.6999 12.7145 14.0465 12.9748ZM15.2144 8.02041C15.2144 8.77616 14.0655 8.77616 14.0655 8.02041C14.0655 5.41043 10.0968 5.41014 10.0968 8.02041C10.0968 8.77616 8.94758 8.77616 8.94758 8.02041C8.94758 3.89835 15.2144 3.89864 15.2144 8.02041ZM22.639 8.02041C22.639 8.77616 21.4898 8.77616 21.4898 8.02041C21.4898 5.41014 17.5211 5.41043 17.5211 8.02041C17.5211 8.77616 16.3721 8.77616 16.3721 8.02041C16.3721 3.89864 22.639 3.89864 22.639 8.02041ZM23.6873 4.71392V1.83804C23.014 2.36105 22.3283 2.77323 21.5867 3.11085C22.4096 3.46038 23.1331 4.01345 23.6873 4.71392ZM19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045ZM19.474 22.3051H23.6873V14.4216C21.3321 14.6059 19.474 16.5931 19.474 18.978V22.3051Z" fill="#063059"/><ellipse cx="11.925" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="11.175" cy="7.5" rx="0.749999" ry="0.75" fill="white"/><ellipse cx="19.35" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="18.6" cy="7.5" rx="0.749999" ry="0.75" fill="white"/></svg>
+        <span class="app-bar__arlo-label">Ask Arlo</span>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+        <button class="app-bar__icon-btn" aria-label="Support">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="white" stroke-width="1.5"/><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M7.5 9.2v-.5c0-.9.6-1.4 1.1-1.8A2 2 0 104.5 5.5"/><circle cx="7.5" cy="11.2" r=".75" fill="white"/></svg>
+        </button>
+      </div>
+      <div class="app-bar__vdivider" aria-hidden="true"></div>
+
+      <!-- Icon buttons -->
+      <div class="app-bar__icons">
+        <button class="app-bar__icon-btn" aria-label="Notifications, 3 new">
+          <svg width="13" height="15" viewBox="0 0 13 15" fill="white"><path d="M6.5.5a5 5 0 00-5 5v3.5L.5 11v.5h12V11l-1-2V5.5a5 5 0 00-5-5zm-1.5 12a1.5 1.5 0 003 0z"/></svg>
+          <span class="app-bar__badge">3</span>
+        </button>
+        <button class="app-bar__icon-btn" aria-label="Settings">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="white"><path d="M5.7.8l-.4 1.5a4.5 4.5 0 00-1.3.8l-1.5-.5L.8 4.8l1.2.9a4.5 4.5 0 000 1.5L.8 8.2l1.7 3 1.5-.5c.4.3.8.6 1.3.8l.4 1.5h2.6l.4-1.5a4.5 4.5 0 001.3-.8l1.5.5 1.7-3-1.2-.9a4.5 4.5 0 000-1.5l1.2-.9-1.7-3-1.5.5a4.5 4.5 0 00-1.3-.8L8.3.8H5.7zM7 4.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z"/></svg>
+        </button>
+        <button class="app-bar__icon-btn" aria-label="Data">
+          <svg width="14" height="13" viewBox="0 0 14 13" fill="white"><rect x="0" y="7" width="4" height="6" rx="1"/><rect x="5" y="3" width="4" height="10" rx="1"/><rect x="10" y="0" width="4" height="13" rx="1"/></svg>
+        </button>
+        <button class="app-bar__icon-btn app-bar__icon-btn--pill" aria-label="User profile">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="white"><circle cx="6.5" cy="4.5" r="3.5"/><path d="M0 13.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="white"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="nav-card">
+
+    <!-- Search Intelligence -->
+    <div class="nav-item" style="margin-bottom:2px">
+      <svg class="nav-item__icon" viewBox="0 0 18 18" fill="none">
+        <circle cx="7.5" cy="7.5" r="5" stroke="#485982" stroke-width="1.5"/>
+        <path d="M11.5 11.5L15 15" stroke="#485982" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-item__label">Search Intelligence</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity:0.4">
+        <path d="M4.5 3L7.5 6L4.5 9" stroke="#485982" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- AI Search — active parent -->
+    <div class="nav-item nav-item--active" style="margin-bottom:2px">
+      <img class="nav-item__icon" src="https://c.animaapp.com/mnf1temheWr30Q/img/navicon-ai-search.svg" alt="" style="opacity:1">
+      <span class="nav-item__label">AI Search</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity:0.5">
+        <path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-sub" style="margin-bottom:4px">
+      <div class="nav-sub-item" style="margin-bottom:2px">AI Overview</div>
+      <div class="nav-sub-item nav-sub-item--active" style="margin-bottom:2px">ChatGPT Ads</div>
+      <div class="nav-subsub">
+        <div class="nav-subsub-item nav-subsub-item--active">Industry Landscape</div>
+        <div class="nav-subsub-item">Account Report</div>
+        <div class="nav-subsub-item">Ad Creative</div>
+      </div>
+      <div class="nav-sub-item">LLM Performance</div>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Market Intelligence -->
+    <div class="nav-item" style="margin-bottom:2px">
+      <svg class="nav-item__icon" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="10" width="3.5" height="6" rx="1" fill="#485982" opacity="0.7"/>
+        <rect x="7.25" y="7" width="3.5" height="9" rx="1" fill="#485982" opacity="0.7"/>
+        <rect x="12.5" y="4" width="3.5" height="12" rx="1" fill="#485982" opacity="0.7"/>
+      </svg>
+      <span class="nav-item__label">Market Intelligence</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity:0.4">
+        <path d="M4.5 3L7.5 6L4.5 9" stroke="#485982" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- My Campaigns -->
+    <div class="nav-item">
+      <svg class="nav-item__icon" viewBox="0 0 18 18" fill="none">
+        <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="1" stroke="#485982" stroke-width="1.5"/>
+        <rect x="10" y="2.5" width="5.5" height="5.5" rx="1" stroke="#485982" stroke-width="1.5"/>
+        <rect x="2.5" y="10" width="5.5" height="5.5" rx="1" stroke="#485982" stroke-width="1.5"/>
+        <rect x="10" y="10" width="5.5" height="5.5" rx="1" stroke="#485982" stroke-width="1.5"/>
+      </svg>
+      <span class="nav-item__label">My Campaigns</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity:0.4">
+        <path d="M4.5 3L7.5 6L4.5 9" stroke="#485982" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+  </div>
+</aside>
+
+<!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════════ -->
+<main class="content">
+  <div class="content-col">
+
+    <!-- SERVICE BAR -->
+    <div class="service-bar">
+
+      <!-- Row 1: Identity -->
+      <div class="sb-identity">
+        <div class="sb-icon">
+          <img src="https://c.animaapp.com/mnf1temheWr30Q/img/chatgpt-logo-1.svg" alt="ChatGPT Ads">
+        </div>
+        <div class="sb-titles">
+          <div class="sb-title">ChatGPT Ads</div>
+          <div class="sb-subtitle">Track how your brand appears in paid and cited placements across ChatGPT responses, monitoring presence, share of voice, and competitive visibility.</div>
+        </div>
+        <div class="sb-date">
+          <svg width="14" height="15" viewBox="0 0 14 15" fill="none" style="flex-shrink:0">
+            <rect x="1" y="2.5" width="12" height="11" rx="1.5" stroke="#2f78bd" stroke-width="1.5"/>
+            <path d="M1 6.5h12" stroke="#2f78bd" stroke-width="1.5"/>
+            <path d="M5 1.5v2M9 1.5v2" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="sb-date-label">28 Apr – 27 May 2026</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Row 2: Tabs -->
+      <div class="tab-rail">
+        <button class="tab tab--active">Industry Landscape</button>
+        <button class="tab tab--inactive">Account Report</button>
+        <button class="tab tab--inactive">Ad Creative</button>
+        <button class="tab tab--inactive">⚡ Signals</button>
+      </div>
+
+      <!-- Row 3: Filters -->
+      <div class="filter-bar">
+        <button class="filter-btn">
+          Prompt Groups
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="filter-btn">
+          Prompts
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="filter-btn">
+          Location
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <div class="filter-spacer"></div>
+        <button class="filter-btn">
+          Saved Filters
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#2f78bd" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+    </div><!-- /service-bar -->
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+
+      <!-- KPI 1: Citation Frequency -->
+      <div class="kpi-card">
+        <div class="kpi-hdr">
+          <div class="kpi-label">CITATION&#10;FREQUENCY</div>
+          <div class="kpi-info">i</div>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-row">
+            <div class="kpi-left">
+              <div class="kpi-accent"></div>
+              <span class="kpi-num">5.7</span>
+              <span class="kpi-pct">%</span>
+              <span class="kpi-change up">+3.4pp</span>
+            </div>
+            <svg class="kpi-spark" id="spark1"></svg>
+          </div>
+          <div class="kpi-sublabel">avg citation frequency vs prior period</div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Performance Score -->
+      <div class="kpi-card">
+        <div class="kpi-hdr">
+          <div class="kpi-label">PERFORMANCE&#10;SCORE</div>
+          <div class="kpi-info">i</div>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-row">
+            <div class="kpi-left">
+              <div class="kpi-accent"></div>
+              <span class="kpi-num">87</span>
+              <span class="kpi-change up">+4</span>
+            </div>
+            <svg class="kpi-spark" id="spark2"></svg>
+          </div>
+          <div class="kpi-sublabel">citation quality score out of 100</div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Avg Citation Position -->
+      <div class="kpi-card">
+        <div class="kpi-hdr">
+          <div class="kpi-label">AVG CITATION&#10;POSITION</div>
+          <div class="kpi-info">i</div>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-row">
+            <div class="kpi-left">
+              <div class="kpi-accent"></div>
+              <span class="kpi-num">5.0</span>
+              <span class="kpi-change flat">—</span>
+            </div>
+            <svg class="kpi-spark" id="spark3"></svg>
+          </div>
+          <div class="kpi-sublabel">avg rank when cited in responses</div>
+        </div>
+      </div>
+
+      <!-- KPI 4: Competitors Detected (purple / count variant) -->
+      <div class="kpi-card kpi-card--purple">
+        <div class="kpi-hdr">
+          <div class="kpi-label">COMPETITORS&#10;DETECTED</div>
+          <div class="kpi-info" style="border-color:#9b8fd4;color:#9b8fd4">i</div>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-row">
+            <div class="kpi-left">
+              <div class="kpi-accent kpi-accent--purple"></div>
+              <span class="kpi-num kpi-num--purple">390</span>
+            </div>
+          </div>
+          <div class="kpi-sublabel">unique domains detected in ChatGPT</div>
+        </div>
+      </div>
+
+    </div><!-- /kpi-row -->
+
+    <!-- CHART CARD -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon">
+          <img src="https://c.animaapp.com/mnf1temheWr30Q/img/chatgpt-logo-1.svg" alt="">
+        </div>
+        <div class="card-titles">
+          <div class="card-title">Citation Frequency Trends</div>
+          <div class="card-subtitle">Daily citation frequency by domain in ChatGPT responses · 28 Apr – 27 May 2026 · United Kingdom</div>
+        </div>
+        <div class="card-actions">
+          <img class="card-action-img" src="https://c.animaapp.com/mnf1temheWr30Q/img/icon-download-outline.svg" alt="Download">
+          <img class="card-action-img" src="https://c.animaapp.com/mnf1temheWr30Q/img/icon-info-outline.svg" alt="Info">
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="citationChart"></canvas>
+      </div>
+
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#b3a2e7"></div><span class="legend-label">adthena.com</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#64abfb"></div><span class="legend-label">reddit.com</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d47dd4"></div><span class="legend-label">techradar.com</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e86492"></div><span class="legend-label">spyfu.com</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8ac8b1"></div><span class="legend-label">semrush.com</span></div>
+      </div>
+
+      <div class="callout">
+        <div class="callout-icon">
+          <img src="https://c.animaapp.com/mnf1temheWr30Q/img/icon-alert-outline.svg" alt="">
+        </div>
+        <p class="callout-text">
+          <strong>adthena.com</strong> citation frequency in ChatGPT grew <strong>+92%</strong> over the period,
+          peaking at <strong>15.6%</strong> on 22 May. <strong>reddit.com</strong> leads the space with a
+          <strong>7.8%</strong> average but showed high volatility (spike to 22% on 14 May).
+          AI-generated competitive summary for this view is <strong>coming soon.</strong>
+        </p>
+      </div>
+
+    </div><!-- /chart card -->
+
+  </div><!-- /content-col -->
+</main>
+
+<script>
+// ─── SPARKLINES ───────────────────────────────────────────────────────────────
+function renderSparkline(svgId, rawData, color, trend) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const W = svg.getBoundingClientRect().width || 90;
+  const H = 44;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  const data = rawData.filter(v => v !== null);
+  if (data.length < 2) return;
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+
+  // Build point array (skip nulls for polyline, keep index for x spacing)
+  const allPts = rawData.map((v, i) => {
+    if (v === null) return null;
+    return [
+      (i / (rawData.length - 1)) * W,
+      H - 4 - ((v - min) / range) * (H - 8)
+    ];
+  });
+  const pts = allPts.filter(Boolean);
+
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const fillPath = linePath + ` L${pts[pts.length-1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
+  const gid = 'g' + svgId;
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="5%" stop-color="${color}" stop-opacity="0.22"/>
+        <stop offset="95%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${fillPath}" fill="url(#${gid})" stroke="none"/>
+    <path d="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+}
+
+// adthena.com citation frequency (30 days, nulls for missing dates)
+const freqData = [
+  3.12,1.72,3.92,4.41,4.08,4.44,3.03,5.56,5.21,null,
+  4.0,5.06,4.92,1.82,null,12.0,8.0,4.65,4.65,7.55,
+  7.14,9.09,6.98,8.06,15.56,10.34,6.49,6.10,5.0,8.89
+];
+// Performance score — trend derived from stable 83→89 arc
+const scoreData = [83,84,83,85,84,85,85,87,86,87,86,88,87,87,86,87,87,89,88,87,88,87,89,88,87,87,88,87,87,87];
+// Avg citation position (inverted so lower pos = line goes up = visual improvement)
+const posRaw = [5.7,3.0,2.8,2.3,5.6,4.0,5.6,2.9,3.8,null,5.5,3.9,7.8,2.0,null,7.4,6.4,5.6,3.6,3.4,3.7,3.4,2.3,5.9,5.0,2.7,5.3,5.0,4.9,5.1];
+const posData = posRaw.map(v => v === null ? null : 10 - v);
+
+window.addEventListener('load', function() {
+  requestAnimationFrame(function() {
+    renderSparkline('spark1', freqData, '#40af46', 'up');
+    renderSparkline('spark2', scoreData, '#b1d1f6', 'neutral');
+    renderSparkline('spark3', posData, '#b1d1f6', 'neutral');
+  });
+});
+
+// ─── LINE CHART DATA ──────────────────────────────────────────────────────────
+// Build full 30-day date array Apr 28 – May 27
+const allDates = [];
+const startDate = new Date('2026-04-28');
+for (let i = 0; i < 30; i++) {
+  const d = new Date(startDate);
+  d.setDate(d.getDate() + i);
+  allDates.push(d.toISOString().slice(0, 10));
+}
+
+function toFreqMap(entries) {
+  const m = {};
+  entries.forEach(e => { m[e[0]] = +(e[1] * 100).toFixed(2); });
+  return m;
+}
+function mapToArray(m) {
+  return allDates.map(d => m[d] !== undefined ? m[d] : null);
+}
+
+const adthenaMap = toFreqMap([
+  ['2026-04-28',0.0312],['2026-04-29',0.0172],['2026-04-30',0.0392],
+  ['2026-05-01',0.0441],['2026-05-02',0.0408],['2026-05-03',0.0444],
+  ['2026-05-04',0.0303],['2026-05-05',0.0556],['2026-05-06',0.0521],
+  ['2026-05-08',0.04],['2026-05-09',0.0506],['2026-05-10',0.0492],
+  ['2026-05-11',0.0182],['2026-05-13',0.12],['2026-05-14',0.08],
+  ['2026-05-15',0.0465],['2026-05-16',0.0465],['2026-05-17',0.0755],
+  ['2026-05-18',0.0714],['2026-05-19',0.0909],['2026-05-20',0.0698],
+  ['2026-05-21',0.0806],['2026-05-22',0.1556],['2026-05-23',0.1034],
+  ['2026-05-24',0.0649],['2026-05-25',0.061],['2026-05-26',0.05],
+  ['2026-05-27',0.0889]
+]);
+
+const redditMap = toFreqMap([
+  ['2026-04-28',0.0469],['2026-04-29',0.0345],['2026-04-30',0.0588],
+  ['2026-05-01',0.0147],['2026-05-02',0.0408],['2026-05-03',0.0222],
+  ['2026-05-04',0.0152],['2026-05-05',0.0556],['2026-05-06',0.0417],
+  ['2026-05-08',0.2],['2026-05-09',0.0506],['2026-05-10',0.0328],
+  ['2026-05-11',0.0364],['2026-05-12',0.0732],['2026-05-13',0.12],
+  ['2026-05-14',0.22],['2026-05-15',0.2093],['2026-05-16',0.1163],
+  ['2026-05-17',0.0755],['2026-05-18',0.0952],['2026-05-19',0.1591],
+  ['2026-05-20',0.1628],['2026-05-21',0.0484],['2026-05-22',0.0889],
+  ['2026-05-23',0.069],['2026-05-24',0.0909],['2026-05-25',0.0732],
+  ['2026-05-26',0.0667],['2026-05-27',0.1111]
+]);
+
+const techradarMap = toFreqMap([
+  ['2026-04-28',0.0312],['2026-04-29',0.069],['2026-04-30',0.0588],
+  ['2026-05-01',0.0588],['2026-05-02',0.0612],['2026-05-03',0.0222],
+  ['2026-05-04',0.0606],['2026-05-05',0.0556],['2026-05-06',0.0625],
+  ['2026-05-08',0.02],['2026-05-09',0.0506],['2026-05-10',0.0492],
+  ['2026-05-11',0.0545],['2026-05-12',0.0488],['2026-05-13',0.12],
+  ['2026-05-14',0.04],['2026-05-15',0.0698],['2026-05-16',0.0698],
+  ['2026-05-17',0.0755],['2026-05-18',0.119],['2026-05-19',0.0682],
+  ['2026-05-20',0.0465],['2026-05-21',0.0484],['2026-05-22',0.0667],
+  ['2026-05-24',0.039],['2026-05-25',0.0488],['2026-05-26',0.0167],
+  ['2026-05-27',0.0222]
+]);
+
+const spyfuMap = toFreqMap([
+  ['2026-04-28',0.0156],['2026-04-29',0.0172],['2026-04-30',0.0392],
+  ['2026-05-01',0.0588],['2026-05-02',0.0408],['2026-05-03',0.0667],
+  ['2026-05-04',0.0455],['2026-05-05',0.0185],['2026-05-06',0.0417],
+  ['2026-05-09',0.0127],['2026-05-10',0.0492],['2026-05-11',0.0364],
+  ['2026-05-12',0.0488],['2026-05-13',0.04],['2026-05-14',0.02],
+  ['2026-05-16',0.0465],['2026-05-17',0.0566],['2026-05-18',0.0476],
+  ['2026-05-19',0.0455],['2026-05-21',0.0323],['2026-05-22',0.0222],
+  ['2026-05-23',0.069],['2026-05-24',0.026],['2026-05-25',0.0366],
+  ['2026-05-26',0.0333],['2026-05-27',0.0222]
+]);
+
+const semrushMap = toFreqMap([
+  ['2026-04-28',0.0312],['2026-04-29',0.0517],['2026-04-30',0.0392],
+  ['2026-05-01',0.0147],['2026-05-02',0.0204],['2026-05-03',0.0222],
+  ['2026-05-06',0.0312],['2026-05-09',0.0253],['2026-05-10',0.0164],
+  ['2026-05-11',0.0364],['2026-05-13',0.06],['2026-05-14',0.08],
+  ['2026-05-15',0.0465],['2026-05-16',0.0465],['2026-05-17',0.0189],
+  ['2026-05-18',0.0238],['2026-05-19',0.0455],['2026-05-20',0.0465],
+  ['2026-05-21',0.0161],['2026-05-22',0.0444],['2026-05-23',0.0345],
+  ['2026-05-24',0.039],['2026-05-25',0.0366],['2026-05-26',0.0667],
+  ['2026-05-27',0.0222]
+]);
+
+// X-axis: only show first, 10th, 20th, last labels
+const xLabels = allDates.map((d, i) => {
+  if (i === 0 || i === 9 || i === 19 || i === 29) {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  }
+  return '';
+});
+
+// ─── CHART.JS ─────────────────────────────────────────────────────────────────
+const ctx = document.getElementById('citationChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: xLabels,
+    datasets: [
+      {
+        label: 'adthena.com',
+        data: mapToArray(adthenaMap),
+        borderColor: '#b3a2e7',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#b3a2e7',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+      },
+      {
+        label: 'reddit.com',
+        data: mapToArray(redditMap),
+        borderColor: '#64abfb',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#64abfb',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+      },
+      {
+        label: 'techradar.com',
+        data: mapToArray(techradarMap),
+        borderColor: '#d47dd4',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#d47dd4',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+      },
+      {
+        label: 'spyfu.com',
+        data: mapToArray(spyfuMap),
+        borderColor: '#e86492',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#e86492',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+      },
+      {
+        label: 'semrush.com',
+        data: mapToArray(semrushMap),
+        borderColor: '#8ac8b1',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#8ac8b1',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderRadius: 6,
+        padding: 8,
+        titleFont: { family: "'Open Sans', Helvetica", size: 11, weight: '600' },
+        bodyFont: { family: "'Open Sans', Helvetica", size: 12 },
+        callbacks: {
+          title: (items) => {
+            const idx = items[0].dataIndex;
+            const dt = new Date(allDates[idx] + 'T00:00:00');
+            return dt.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+          },
+          label: (item) => {
+            const v = item.parsed.y;
+            if (v === null || v === undefined) return null;
+            return ` ${item.dataset.label}: ${v.toFixed(1)}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: {
+          color: '#9e9e9e',
+          font: { family: "'Open Sans', Helvetica", size: 12, stretch: 'condensed' },
+          maxRotation: 0,
+          autoSkip: false,
+        }
+      },
+      y: {
+        grid: { color: '#e8eaf0' },
+        border: { display: false },
+        ticks: {
+          color: '#9e9e9e',
+          font: { family: "'Open Sans', Helvetica", size: 12 },
+          callback: (v) => v + '%',
+          maxTicksLimit: 6,
+        },
+        min: 0,
+      }
+    },
+    interaction: { mode: 'index', intersect: false }
+  }
+});
+</script>
+</body>
+</html>

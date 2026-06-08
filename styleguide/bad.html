@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Performance — Adthena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,300;75,400;75,600;100,300;100,400;100,600&display=swap" rel="stylesheet">
+  <!-- ✅ DS component stylesheet — first, always -->
+  <link rel="stylesheet" href="ds-components.css">
+  <!-- ✅ app-bar component (verbatim from repo: components/app-bar/app-bar.css) -->
+  <link rel="stylesheet" href="components/app-bar/app-bar.css">
+  <!-- ✅ main-nav component (verbatim from repo: components/main-nav/main-nav.css) -->
+  <link rel="stylesheet" href="components/main-nav/main-nav.css">
+  <style>
+    /* ── Page-level layout ─────────────────────────────────────────────── */
+    .page-appbar  { position: fixed; top: 0; left: 0; right: 0; z-index: 50; }
+    .page-sidebar { position: fixed; top: 50px; left: 0; bottom: 0; z-index: 40; width: 254px; overflow-y: auto; background: var(--bg-page); }
+    .page-sidebar__inner { margin: 24px 16px 0; }
+    .page-content { padding-top: 74px; padding-left: 278px; padding-right: 24px; padding-bottom: 40px; min-height: 100vh; }
+    .page-col { display: flex; flex-direction: column; gap: 16px; max-width: 1200px; margin: 0 auto; }
+
+    /* ── Grid helpers ──────────────────────────────────────────────────── */
+    .g-4col  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .g-2col  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .g-6040  { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+    .g-stack { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Canvas trend chart (not a DS component) ───────────────────────── */
+    .trend-chart-wrap { position: relative; width: 100%; height: 220px; }
+    .trend-chart-canvas { display: block; }
+    .trend-chart-tooltip { position: absolute; pointer-events: none; background: rgba(0,0,0,0.8); color: white; border-radius: 6px; padding: 6px 10px; font-size: 12px; line-height: 1.5; display: none; white-space: nowrap; }
+    .trend-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .trend-legend__item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(0,0,0,0.6); cursor: pointer; }
+    .trend-legend__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Domain performance table (not a DS component) ─────────────────── */
+    .perf-table { width: 100%; border-collapse: collapse; }
+    .perf-table th { font-size: 11px; font-weight: 600; color: rgba(0,0,0,0.4); text-align: left; padding: 0 8px 10px; letter-spacing: 0.04em; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); }
+    .perf-table th:last-child, .perf-table td:last-child { text-align: right; }
+    .perf-table td { padding: 9px 8px; font-size: 13px; color: rgba(0,0,0,0.87); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .perf-table tr:last-child td { border-bottom: none; }
+    .perf-table tr:hover td { background: #fafcff; }
+    .perf-table__domain { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .perf-table__brand-tag { font-size: 10px; font-weight: 600; padding: 1px 5px; background: #eaf4ff; color: #1565c0; border-radius: 4px; }
+    .perf-table__score-bar { display: flex; align-items: center; gap: 8px; }
+    .perf-table__bar-track { flex: 1; height: 6px; background: #edf0f5; border-radius: 3px; overflow: hidden; min-width: 60px; }
+    .perf-table__bar-fill { height: 100%; border-radius: 3px; }
+    .perf-table__score-val { font-size: 13px; font-weight: 600; color: #27365b; min-width: 28px; text-align: right; }
+    .rank-badge { width: 20px; height: 20px; border-radius: 50%; background: #edf0f5; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #485982; flex-shrink: 0; }
+    .rank-badge--1 { background: #ffd700; color: #7a5b00; }
+    .rank-badge--2 { background: #c0c0c0; color: #555; }
+    .rank-badge--3 { background: #cd7f32; color: #fff; }
+
+    /* ── Prompt group list (not a DS component) ─────────────────────────── */
+    .prompt-list { display: flex; flex-direction: column; }
+    .prompt-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .prompt-row:last-child { border-bottom: none; }
+    .prompt-row__name { font-size: 13px; color: rgba(0,0,0,0.87); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prompt-row__count { font-size: 12px; color: rgba(0,0,0,0.5); min-width: 50px; text-align: right; }
+    .prompt-row__bar-wrap { width: 80px; }
+    .prompt-row__bar-track { height: 5px; background: #edf0f5; border-radius: 3px; overflow: hidden; }
+    .prompt-row__bar-fill { height: 100%; border-radius: 3px; background: #b3a2e7; }
+  </style>
+</head>
+<body>
+
+<!-- ── Hidden gradient defs for kpi-card sparklines ──────────────────────── -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="grad-up" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#40af46" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#40af46" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="grad-down" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#de5a5a" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#de5a5a" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="grad-flat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6477a2" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#6477a2" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ── App Bar (verbatim from styleguide/index.html app-bar live demo) ─────── -->
+<div class="page-appbar">
+  <div style="position:relative">
+  <nav class="app-bar" aria-label="Main navigation">
+    <div class="app-bar__content">
+      <div class="app-bar__left">
+        <button class="app-bar__hamburger" aria-label="Toggle sidebar">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M0 1.5h16M0 5.5h16M0 9.5h16"/></svg>
+        </button>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+        <div class="app-bar__logo" aria-label="Adthena">
+          <svg width="113" height="26" viewBox="0 0 113 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M40.2884 15.4986H46.6049L43.4567 7.75058L40.2884 15.4986ZM38.1286 20.7466H36.4L43.3921 5.14664H43.6104L50.5143 20.7466H48.7864L47.1813 16.8731H39.7336L38.1286 20.7466Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M52.3366 15.993C52.3366 16.5311 52.4224 17.0344 52.5939 17.5037C52.7652 17.9729 53.0085 18.3798 53.3238 18.7246C53.6382 19.0695 54.0185 19.3423 54.4643 19.5419C54.9091 19.7421 55.4128 19.8423 55.9751 19.8423C56.5224 19.8423 57.0332 19.7421 57.5062 19.5419C57.9781 19.3423 58.386 19.0695 58.7287 18.7246C59.0711 18.3798 59.3382 17.9729 59.5305 17.5037C59.7221 17.0344 59.8179 16.5311 59.8179 15.993C59.8179 15.4551 59.7221 14.9514 59.5305 14.4822C59.3382 14.0133 59.0711 13.606 58.7287 13.261C58.386 12.9168 57.9781 12.6439 57.5062 12.4432C57.0332 12.2438 56.5224 12.1437 55.9751 12.1437C55.4128 12.1437 54.9091 12.2438 54.4643 12.4432C54.0185 12.6439 53.6382 12.9168 53.3238 13.261C53.0085 13.606 52.7652 14.0133 52.5939 14.4822C52.4224 14.9514 52.3366 15.4551 52.3366 15.993ZM61.1133 20.835H59.7566V19.2213H59.7157C59.496 19.5523 59.2358 19.8352 58.9352 20.0699C58.6335 20.3046 58.3179 20.4976 57.9889 20.6491C57.6609 20.8015 57.3218 20.9108 56.9719 20.9803C56.6223 21.0487 56.2904 21.0836 55.9756 21.0836C55.2214 21.0836 54.5335 20.9558 53.9096 20.7012C53.2862 20.4454 52.7486 20.0904 52.2967 19.6347C51.844 19.1796 51.4915 18.642 51.2381 18.0213C50.9841 17.4 50.8582 16.7244 50.8582 15.9931C50.8582 15.2622 50.9841 14.5856 51.2381 13.965C51.4915 13.344 51.844 12.806 52.2967 12.3502C52.7486 11.8953 53.2862 11.5405 53.9096 11.285C54.5335 11.0299 55.2214 10.902 55.9756 10.902C56.2904 10.902 56.6223 10.9366 56.9719 11.0055C57.3218 11.075 57.6609 11.1851 57.9889 11.3367C58.3179 11.4885 58.6335 11.6816 58.9352 11.916C59.2358 12.151 59.496 12.4332 59.7157 12.7646H59.7566V5.19055H61.1133V20.835Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M69.0471 12.392H66.2726V18.1036C66.2726 18.4628 66.3061 18.7554 66.3747 18.9832C66.4433 19.211 66.5394 19.387 66.6631 19.5112C66.7861 19.6346 66.9339 19.7214 67.105 19.7697C67.276 19.8181 67.4644 19.8423 67.6704 19.8423C67.9026 19.8423 68.1427 19.8077 68.3895 19.7386C68.6357 19.6694 68.8625 19.5799 69.0677 19.4694L69.1291 20.732C68.6216 20.9661 68.0125 21.0836 67.3003 21.0836C67.04 21.0836 66.7691 21.0487 66.4889 20.9802C66.2068 20.9107 65.9505 20.7803 65.718 20.5868C65.4846 20.3938 65.293 20.1318 65.142 19.8005C64.9909 19.4694 64.9157 19.0347 64.9157 18.497V12.392H62.8817V11.1503H64.9157V8.41852H66.2726V11.1503H69.0471V12.392Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M70.8964 5.19055H72.2527V12.7022H72.2935C72.4446 12.4407 72.6366 12.1985 72.8688 11.9781C73.1022 11.7577 73.3619 11.5678 73.6502 11.4088C73.9373 11.2507 74.2426 11.1263 74.5646 11.0364C74.8861 10.9469 75.2044 10.9019 75.5202 10.9019C76.7536 10.9019 77.6643 11.23 78.2542 11.8852C78.8421 12.5406 79.1373 13.4753 79.1373 14.689V20.835H77.781V15.4758C77.781 14.3995 77.5956 13.5752 77.2255 13.0024C76.8566 12.4299 76.1706 12.1437 75.171 12.1437C75.1026 12.1437 74.9104 12.1715 74.5949 12.2265C74.2803 12.2816 73.9483 12.4331 73.5984 12.6816C73.2495 12.93 72.9374 13.3024 72.664 13.799C72.3893 14.2961 72.2527 14.9857 72.2527 15.8687V20.835H70.8964V5.19055Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M89.8033 15.2477C89.8033 14.3239 89.5287 13.5752 88.9813 13.0025C88.4333 12.43 87.6658 12.1437 86.6797 12.1437C86.2412 12.1437 85.8158 12.2301 85.4054 12.4024C84.9941 12.5754 84.6347 12.806 84.3263 13.0954C84.0179 13.3855 83.7713 13.7164 83.5866 14.0891C83.4013 14.4616 83.3088 14.8481 83.3088 15.2477H89.8033ZM83.2676 16.3651C83.3088 16.8484 83.4256 17.3034 83.6171 17.7312C83.8094 18.1593 84.0622 18.5278 84.3771 18.8383C84.6927 19.1488 85.0559 19.3939 85.4672 19.573C85.8774 19.7524 86.3233 19.8423 86.803 19.8423C87.5289 19.8423 88.1562 19.6735 88.683 19.3348C89.2111 18.9973 89.6105 18.6073 89.8852 18.1657L90.9341 19.0347C90.3579 19.7666 89.7238 20.2908 89.0325 20.6078C88.3403 20.9245 87.5972 21.0836 86.803 21.0836C86.0899 21.0836 85.4292 20.9557 84.8193 20.7011C84.209 20.4454 83.6859 20.0903 83.2471 19.6347C82.8083 19.1795 82.4631 18.6419 82.2094 18.0212C81.9557 17.4 81.8289 16.7243 81.8289 15.993C81.8289 15.2621 81.9522 14.5855 82.1991 13.9649C82.4459 13.3439 82.7877 12.8059 83.2265 12.3501C83.6652 11.8952 84.1789 11.5404 84.7682 11.2849C85.357 11.0298 85.994 10.9019 86.6797 10.9019C87.4053 10.9019 88.0567 11.0334 88.6318 11.2952C89.2073 11.5577 89.691 11.9056 90.0805 12.3404C90.4713 12.7749 90.7693 13.2855 90.9749 13.8719C91.1803 14.4583 91.2833 15.0823 91.2833 15.7445V16.3651H83.2676Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M95.0454 11.1503C95.0729 11.4125 95.0893 11.6715 95.0968 11.9262C95.1037 12.1815 95.1071 12.4406 95.1071 12.7022H95.148C95.299 12.4406 95.491 12.1984 95.7235 11.978C95.9567 11.7576 96.2166 11.5678 96.5047 11.4087C96.7921 11.2507 97.097 11.1263 97.4191 11.0364C97.7411 10.9468 98.0592 10.9019 98.375 10.9019C99.6084 10.9019 100.519 11.2299 101.109 11.8852C101.697 12.5405 101.991 13.4753 101.991 14.6889V20.8349H100.635V15.4758C100.635 14.3994 100.45 13.5752 100.08 13.0023C99.7111 12.4299 99.0253 12.1436 98.0254 12.1436C97.9568 12.1436 97.7652 12.1715 97.4496 12.2264C97.1348 12.2816 96.8027 12.4331 96.4532 12.6815C96.1039 12.9299 95.7921 13.3024 95.5184 13.7989C95.2442 14.2961 95.1071 14.9856 95.1071 15.8687V20.8349H93.7505V13.2817C93.7505 13.0198 93.7406 12.6889 93.7199 12.2883C93.6993 11.8886 93.6752 11.5092 93.6479 11.1503H95.0454Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M110.644 16.0135C110.301 16.0135 109.873 16.0314 109.359 16.0653C108.845 16.0999 108.353 16.1829 107.88 16.3136C107.407 16.445 107.003 16.648 106.667 16.9239C106.331 17.2001 106.163 17.5794 106.163 18.0624C106.163 18.3798 106.228 18.6523 106.359 18.8798C106.489 19.1072 106.664 19.2933 106.883 19.4381C107.102 19.5834 107.345 19.6867 107.612 19.7489C107.88 19.8106 108.15 19.8422 108.424 19.8422C108.917 19.8422 109.346 19.7597 109.708 19.5937C110.071 19.4278 110.376 19.2041 110.623 18.9212C110.87 18.6384 111.052 18.3075 111.167 17.9276C111.284 17.5486 111.343 17.1449 111.343 16.7168V16.0135H110.644ZM111.343 14.8963V14.6476C111.343 12.9787 110.52 12.1436 108.876 12.1436C107.753 12.1436 106.773 12.5234 105.937 13.2817L105.115 12.309C106.019 11.3711 107.376 10.9019 109.184 10.9019C109.65 10.9019 110.099 10.9708 110.531 11.109C110.963 11.2471 111.335 11.4577 111.65 11.74C111.966 12.0228 112.219 12.3785 112.412 12.8059C112.603 13.2336 112.699 13.7442 112.699 14.3373V18.6622C112.699 19.0346 112.716 19.4247 112.75 19.8316C112.784 20.2389 112.822 20.5736 112.864 20.8349H111.548C111.507 20.6006 111.477 20.346 111.456 20.0698C111.435 19.7935 111.424 19.5249 111.424 19.2625H111.384C110.986 19.9112 110.517 20.3768 109.976 20.659C109.434 20.9419 108.773 21.0836 107.993 21.0836C107.568 21.0836 107.157 21.0247 106.76 20.9076C106.362 20.7904 106.009 20.6113 105.701 20.3695C105.392 20.1283 105.146 19.8316 104.961 19.48C104.776 19.128 104.683 18.7176 104.683 18.2488C104.683 17.4618 104.886 16.8446 105.29 16.3965C105.694 15.9483 106.201 15.6138 106.811 15.3929C107.42 15.1719 108.071 15.034 108.763 14.9786C109.456 14.9239 110.088 14.8963 110.664 14.8963H111.343Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 22.8909L9.81245 24.0115C9.64175 23.1359 9.55019 22.2335 9.55019 21.3083C9.55019 19.6522 9.83897 18.0634 10.3653 16.5876C9.03084 15.6612 7.86604 14.5054 6.92315 13.178L0 22.8909Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.7627 25.9467L23.5599 17.9904C21.9194 18.6768 20.1226 19.057 18.2395 19.057C15.9213 19.057 13.7352 18.4801 11.8111 17.4657C11.4163 18.6762 11.1995 19.9671 11.1995 21.3083C11.1995 22.3077 11.3213 23.2781 11.5448 24.2095L26.7627 25.9467Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M24.3224 15.9484L21.5003 8.91724L20.1061 9.35818C16.7502 10.4354 13.9466 12.7917 12.4327 15.9202C14.1618 16.861 16.1408 17.3965 18.2405 17.3965C19.9047 17.3965 21.4707 16.9881 23.0246 16.4418L23.9972 16.0992" fill="white"/><mask id="mask0_15_90" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="7" y="0" width="13" height="16"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.94653 6.10352e-05H19.4926V15.0282H7.94653V6.10352e-05Z" fill="white"/></mask><g mask="url(#mask0_15_90)"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.4926 7.88839L16.3164 6.10352e-05L7.94653 11.7421C8.76792 13.0192 9.81464 14.1339 11.0332 15.0283C12.7419 11.6145 15.7966 8.9974 19.4926 7.88839Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M10.3598 16.5908C9.02749 15.6657 7.86401 14.5117 6.92245 13.1869L5.31897 15.4375C6.09011 16.3338 6.9713 17.132 7.94377 17.8075C7.41807 19.2818 7.12999 20.8675 7.12999 22.5211C7.12999 22.9198 7.1503 23.3139 7.18345 23.7041L9.80798 24.0036C9.63756 23.1298 9.54586 22.2285 9.54586 21.3046C9.54586 19.651 9.83408 18.0647 10.3598 16.5908Z" fill="white"/></g></svg>
+        </div>
+      </div>
+      <div class="app-bar__center"></div>
+      <div class="app-bar__right">
+        <button class="app-bar__domain-btn" aria-label="Select domain and location">
+          <svg width="11" height="15" viewBox="0 0 11 15" fill="#5bb3f9" aria-hidden="true"><path d="M5.5 0C2.5 0 0 2.5 0 5.5c0 4.2 5.5 9.5 5.5 9.5S11 9.7 11 5.5C11 2.5 8.5 0 5.5 0zm0 7.5a2 2 0 110-4 2 2 0 010 4z"/></svg>
+          <span class="app-bar__domain-text">adthena.com · UK</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M1 1l4 4 4-4"/></svg>
+        </button>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+        <div class="app-bar__arlo-section">
+          <svg width="27" height="24" viewBox="0 0 27 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;flex-shrink:0"><path d="M2.18565 2.89709C2.41973 2.53971 2.89921 2.43976 3.25658 2.67385L11.393 8.00326L7.28353 14.2772L4.12687 12.2096C1.01925 10.174 0.150139 6.00471 2.18565 2.89709Z" fill="#FFC25E"/><path d="M11.393 8.00326L7.28353 14.2772L4.12696 12.2096L4.74338 11.2685L6.95886 12.7197L9.83548 8.32793L2.94397 3.81393C1.49038 6.36422 2.25427 9.63814 4.74338 11.2685L4.12696 12.2096L3.84197 12.0124C0.967759 9.91433 0.213842 5.90745 2.18571 2.897C2.41979 2.53972 2.89916 2.4398 3.2565 2.67379L11.393 8.00326Z" fill="#063059"/><path d="M19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045Z" fill="#FFC25E"/><path d="M9.99985 3.11085C9.25742 2.77266 8.57367 2.3619 7.89928 1.83804V4.71392C8.45178 4.01571 9.17323 3.4618 9.99985 3.11085ZM19.5054 12.2023C21.8149 12.2023 23.6873 10.3299 23.6873 8.02041C23.6873 5.71063 21.8152 3.83854 19.5054 3.83854C18.2301 3.83854 17.046 4.40521 16.2457 5.3988C16.0201 5.68852 15.5798 5.69589 15.3465 5.40617C14.5465 4.40833 13.3599 3.83854 12.0811 3.83854C9.77136 3.83854 7.89928 5.71063 7.89928 8.02041C7.89928 10.3299 9.77165 12.2023 12.0811 12.2023C13.3503 12.2023 14.5366 11.6401 15.3408 10.6417C15.5665 10.352 16.0067 10.3446 16.24 10.6346C17.0443 11.6373 18.2332 12.2023 19.5054 12.2023ZM18.831 13.3084L16.1995 15.9402C15.9753 16.1644 15.6113 16.1644 15.3871 15.9402L12.7555 13.3084C10.9007 13.5448 9.06267 12.7964 7.89928 11.3269V13.5899C7.89928 18.3821 11.8223 22.3051 16.6145 22.3051H18.3247V18.978C18.3247 15.9589 20.6969 13.4558 23.6873 13.2696V11.3269C22.5239 12.7964 20.6858 13.5448 18.831 13.3084ZM14.0465 12.9748L15.7933 14.7213L17.5401 12.9748C16.8867 12.7145 16.2936 12.329 15.7933 11.8437C15.2929 12.329 14.6999 12.7145 14.0465 12.9748ZM15.2144 8.02041C15.2144 8.77616 14.0655 8.77616 14.0655 8.02041C14.0655 5.41043 10.0968 5.41014 10.0968 8.02041C10.0968 8.77616 8.94758 8.77616 8.94758 8.02041C8.94758 3.89835 15.2144 3.89864 15.2144 8.02041ZM22.639 8.02041C22.639 8.77616 21.4898 8.77616 21.4898 8.02041C21.4898 5.41014 17.5211 5.41043 17.5211 8.02041C17.5211 8.77616 16.3721 8.77616 16.3721 8.02041C16.3721 3.89864 22.639 3.89864 22.639 8.02041ZM23.6873 4.71392V1.83804C23.014 2.36105 22.3283 2.77323 21.5867 3.11085C22.4096 3.46038 23.1331 4.01345 23.6873 4.71392ZM19.4059 2.69045C21.1774 2.168 22.4876 1.47462 23.8384 0.197266C24.2341 -0.204423 24.8365 0.0937961 24.8365 0.585347V22.8798C24.8365 23.197 24.5791 23.4544 24.2619 23.4544C21.7129 23.4544 19.1635 23.4544 16.6145 23.4544C11.1876 23.4544 6.75006 19.0165 6.75006 13.5899V0.681162C6.75006 0.114206 7.30624 -0.223132 7.71955 0.170335C9.07826 1.46299 10.3939 2.16347 12.1806 2.69045C13.5331 2.7154 14.8235 3.25628 15.7933 4.19714C16.7631 3.25628 18.0534 2.7154 19.4059 2.69045ZM19.474 22.3051H23.6873V14.4216C21.3321 14.6059 19.474 16.5931 19.474 18.978V22.3051Z" fill="#063059"/><ellipse cx="11.925" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="11.175" cy="7.5" rx="0.749999" ry="0.75" fill="white"/><ellipse cx="19.35" cy="8.25" rx="3" ry="3" fill="#063059"/><ellipse cx="18.6" cy="7.5" rx="0.749999" ry="0.75" fill="white"/></svg>
+          <span class="app-bar__arlo-label">Ask Arlo</span>
+          <div class="app-bar__vdivider" aria-hidden="true"></div>
+          <button class="app-bar__icon-btn" aria-label="Support">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6.5" stroke="white" stroke-width="1.5"/><path stroke="white" stroke-width="1.5" stroke-linecap="round" d="M7.5 9.2v-.5c0-.9.6-1.4 1.1-1.8A2 2 0 104.5 5.5"/><circle cx="7.5" cy="11.2" r=".75" fill="white"/></svg>
+          </button>
+        </div>
+        <div class="app-bar__vdivider" aria-hidden="true"></div>
+        <div class="app-bar__icons">
+          <button class="app-bar__icon-btn" id="demo-notif-btn" aria-label="Notifications, 3 new" aria-expanded="false" aria-haspopup="true">
+            <svg width="13" height="15" viewBox="0 0 13 15" fill="white" aria-hidden="true"><path d="M6.5.5a5 5 0 00-5 5v3.5L.5 11v.5h12V11l-1-2V5.5a5 5 0 00-5-5zm-1.5 12a1.5 1.5 0 003 0z"/></svg>
+            <span class="app-bar__badge" aria-hidden="true">3</span>
+          </button>
+          <button class="app-bar__icon-btn" aria-label="Settings">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="white" aria-hidden="true"><path d="M5.7.8l-.4 1.5a4.5 4.5 0 00-1.3.8l-1.5-.5L.8 4.8l1.2.9a4.5 4.5 0 000 1.5L.8 8.2l1.7 3 1.5-.5c.4.3.8.6 1.3.8l.4 1.5h2.6l.4-1.5a4.5 4.5 0 001.3-.8l1.5.5 1.7-3-1.2-.9a4.5 4.5 0 000-1.5l1.2-.9-1.7-3-1.5.5a4.5 4.5 0 00-1.3-.8L8.3.8H5.7zM7 4.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z"/></svg>
+          </button>
+          <button class="app-bar__icon-btn" aria-label="Data">
+            <svg width="14" height="13" viewBox="0 0 14 13" fill="white" aria-hidden="true"><rect x="0" y="7" width="4" height="6" rx="1"/><rect x="5" y="3" width="4" height="10" rx="1"/><rect x="10" y="0" width="4" height="13" rx="1"/></svg>
+          </button>
+          <button class="app-bar__icon-btn app-bar__icon-btn--pill" aria-label="User profile">
+            <svg width="13" height="14" viewBox="0 0 13 14" fill="white" aria-hidden="true"><circle cx="6.5" cy="4.5" r="3.5"/><path d="M0 13.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="white"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Notifications panel -->
+  <div class="notif-panel" id="demo-notif-panel" role="dialog" aria-label="Notifications" hidden>
+    <div class="notif-panel__tabs-wrap">
+      <div class="notif-panel__tabs" role="tablist">
+        <button class="notif-panel__tab active" role="tab">Actionable Insights</button>
+        <button class="notif-panel__tab" role="tab">Smart Monitor</button>
+        <button class="notif-panel__tab" role="tab">What's New <span class="notif-panel__tab-count">3</span></button>
+        <button class="notif-panel__gear" aria-label="Notification settings">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fill="currentColor" d="M5.7.8l-.4 1.5a4.5 4.5 0 00-1.3.8l-1.5-.5L.8 4.8l1.2.9a4.5 4.5 0 000 1.5L.8 8.2l1.7 3 1.5-.5c.4.3.8.6 1.3.8l.4 1.5h2.6l.4-1.5a4.5 4.5 0 001.3-.8l1.5.5 1.7-3-1.2-.9a4.5 4.5 0 000-1.5l1.2-.9-1.7-3-1.5.5a4.5 4.5 0 00-1.3-.8L8.3.8H5.7zM7 4.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="notif-panel__list">
+      <div class="notif-card">
+        <div>
+          <div class="notif-card__title">Citation Frequency Drop</div>
+          <div class="notif-card__date">28 Apr – 27 May 2026</div>
+        </div>
+        <div class="notif-card__chips">
+          <span class="notif-chip notif-chip--investigate">Investigate</span>
+          <span class="notif-chip notif-chip--neutral">30 Day Comparison</span>
+        </div>
+        <div class="notif-card__data-row">
+          <span class="notif-card__text">ChatGPT citation frequency fell <span class="notif-card__delta--down">−1.4%</span> vs previous period across "Best paid search tools" prompts.</span>
+        </div>
+        <div class="notif-card__actions">
+          <button class="notif-action-ghost">Dismiss</button>
+          <button class="notif-action-outlined">View Details</button>
+        </div>
+      </div>
+    </div>
+    <div class="notif-panel__see-all">
+      <button class="notif-see-all-btn">See all notifications <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 7h8M8 4l3 3-3 3"/></svg></button>
+    </div>
+  </div>
+  </div><!-- /position:relative wrapper -->
+</div>
+
+<!-- ── Sidebar (verbatim structure from styleguide/index.html main-nav section) -->
+<div class="page-sidebar">
+  <div class="page-sidebar__inner">
+    <nav class="main-nav" id="main-nav-demo" aria-label="Product navigation">
+      <div class="main-nav__section">
+
+        <div class="main-nav__item" data-nav="overview">
+          <span class="main-nav__item-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+          </span>
+          <span class="main-nav__item-label">Overview</span>
+        </div>
+
+        <div class="main-nav__item" data-nav="sov">
+          <span class="main-nav__item-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="currentColor" stroke-width="1.3" d="M1 12l4-4 3 3 4-5 3 2"/></svg>
+          </span>
+          <span class="main-nav__item-label">Share of Voice</span>
+        </div>
+
+        <div class="main-nav__item" data-nav="competitor">
+          <span class="main-nav__item-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </span>
+          <span class="main-nav__item-label">Competitor Trends</span>
+        </div>
+
+        <div class="main-nav__separator"></div>
+
+        <div class="main-nav__active-section">
+          <div class="main-nav__item main-nav__item--active" data-nav="chatgpt">
+            <span class="main-nav__item-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="currentColor" stroke-width="1.3" stroke-linecap="round" d="M3 4h10M3 8h7M3 12h5"/><circle cx="13" cy="10" r="2.5" stroke="currentColor" stroke-width="1.3"/><path stroke="currentColor" stroke-width="1.3" stroke-linecap="round" d="M15 12.5l1.5 1.5"/></svg>
+            </span>
+            <span class="main-nav__item-label">ChatGPT Performance</span>
+          </div>
+          <div class="main-nav__subitems" style="display:flex">
+            <div class="main-nav__subitem main-nav__subitem--active">
+              <span class="main-nav__subitem-bar"><span class="main-nav__subitem-bar-line"></span></span>
+              <span class="main-nav__subitem-label">Overview</span>
+            </div>
+            <div class="main-nav__subitem">
+              <span class="main-nav__subitem-bar"><span class="main-nav__subitem-bar-line"></span></span>
+              <span class="main-nav__subitem-label">Domain Performance</span>
+            </div>
+            <div class="main-nav__subitem">
+              <span class="main-nav__subitem-bar"><span class="main-nav__subitem-bar-line"></span></span>
+              <span class="main-nav__subitem-label">Prompt Analysis</span>
+            </div>
+            <div class="main-nav__subitem">
+              <span class="main-nav__subitem-bar"><span class="main-nav__subitem-bar-line"></span></span>
+              <span class="main-nav__subitem-label">Trends</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-nav__item" data-nav="aio">
+          <span class="main-nav__item-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path stroke="currentColor" stroke-width="1.3" stroke-linecap="round" d="M5 8h6M8 5v6"/></svg>
+          </span>
+          <span class="main-nav__item-label">AIO Intelligence</span>
+        </div>
+
+      </div>
+    </nav>
+  </div>
+</div>
+
+<!-- ── Main Content ─────────────────────────────────────────────────────────── -->
+<main class="page-content">
+  <div class="page-col">
+
+    <!-- Service Bar (verbatim from service-bar/demo.html) -->
+    <div class="service-bar">
+      <div class="service-bar__header">
+        <div class="service-bar__avatar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="white" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="service-bar__text">
+          <div class="service-bar__title">ChatGPT Performance</div>
+          <div class="service-bar__subtitle">adthena.com · United Kingdom · All Prompts</div>
+        </div>
+        <div class="service-bar__actions">
+          <div class="service-bar__date">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="#181818" stroke-width="1.2"/><path d="M1 5h12" stroke="#181818" stroke-width="1.2"/><path d="M4 1v2M10 1v2" stroke="#181818" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span class="service-bar__date-label">28 Apr – 27 May, 2026</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path stroke="#181818" stroke-width="1.5" stroke-linecap="round" d="M1 1l4 4 4-4"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="service-bar__tabs">
+        <div class="tab-item tab-item--active">Overview</div>
+        <div class="tab-item">Domain Performance</div>
+        <div class="tab-item">Prompt Analysis</div>
+        <div class="tab-item">Trends</div>
+      </div>
+    </div>
+
+    <!-- KPI Row (verbatim structure from kpi-card/demo.html × 4) -->
+    <div class="g-4col">
+
+      <!-- Performance Score -->
+      <div class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">Performance Score</span>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__row">
+            <div class="kpi-card__values">
+              <div class="kpi-card__bar"></div>
+              <span class="kpi-card__value">86</span>
+              <span class="kpi-card__value-unit">.9</span>
+              <span class="kpi-card__delta kpi-card__delta--up">+4.2</span>
+            </div>
+            <div class="kpi-card__sparkline" data-color="#40af46">
+              <svg width="100%" height="44" viewBox="0 0 200 44" preserveAspectRatio="none">
+                <path d="M0,36 C40,32 80,26 110,20 C140,15 165,10 200,5" fill="none" stroke="#40af46" stroke-width="1.5"/>
+                <path d="M0,36 C40,32 80,26 110,20 C140,15 165,10 200,5 L200,44 L0,44Z" fill="url(#grad-up)"/>
+              </svg>
+            </div>
+          </div>
+          <span class="kpi-card__subtitle">vs previous period</span>
+        </div>
+      </div>
+
+      <!-- Citation Frequency -->
+      <div class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">Citation Frequency</span>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__row">
+            <div class="kpi-card__values">
+              <div class="kpi-card__bar"></div>
+              <span class="kpi-card__value">5</span>
+              <span class="kpi-card__value-unit">.7%</span>
+              <span class="kpi-card__delta kpi-card__delta--up">+1.3%</span>
+            </div>
+            <div class="kpi-card__sparkline" data-color="#40af46">
+              <svg width="100%" height="44" viewBox="0 0 200 44" preserveAspectRatio="none">
+                <path d="M0,34 C35,30 70,24 100,18 C125,13 155,10 200,6" fill="none" stroke="#40af46" stroke-width="1.5"/>
+                <path d="M0,34 C35,30 70,24 100,18 C125,13 155,10 200,6 L200,44 L0,44Z" fill="url(#grad-up)"/>
+              </svg>
+            </div>
+          </div>
+          <span class="kpi-card__subtitle">of all ChatGPT responses</span>
+        </div>
+      </div>
+
+      <!-- Avg Position -->
+      <div class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">Avg. Citation Position</span>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__row">
+            <div class="kpi-card__values kpi-card__values--full">
+              <div class="kpi-card__bar"></div>
+              <span class="kpi-card__value">5</span>
+              <span class="kpi-card__value-unit">.0</span>
+              <span class="kpi-card__delta kpi-card__delta--up">+1.2</span>
+              <div class="kpi-card__sparkline" style="margin-left:8px" data-color="#6477a2">
+                <svg width="100%" height="44" viewBox="0 0 235 44" preserveAspectRatio="none">
+                  <path d="M0,22 C40,20 80,18 120,20 C150,22 180,16 235,14" fill="none" stroke="#6477a2" stroke-width="1.5"/>
+                  <path d="M0,22 C40,20 80,18 120,20 C150,22 180,16 235,14 L235,44 L0,44Z" fill="url(#grad-flat)"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <span class="kpi-card__subtitle">lower = better</span>
+        </div>
+      </div>
+
+      <!-- Brand Share of Mentions -->
+      <div class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">Brand Share of Mentions</span>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__row">
+            <div class="kpi-card__values">
+              <div class="kpi-card__bar"></div>
+              <span class="kpi-card__value">37</span>
+              <span class="kpi-card__value-unit">.7%</span>
+              <span class="kpi-card__delta kpi-card__delta--up">+5.1%</span>
+            </div>
+            <div class="kpi-card__sparkline" data-color="#64abfb">
+              <svg width="100%" height="44" viewBox="0 0 200 44" preserveAspectRatio="none">
+                <path d="M0,30 C40,26 80,20 120,14 C155,9 175,7 200,5" fill="none" stroke="#64abfb" stroke-width="1.5"/>
+                <path d="M0,30 C40,26 80,20 120,14 C155,9 175,7 200,5 L200,44 L0,44Z" fill="url(#grad-up)"/>
+              </svg>
+            </div>
+          </div>
+          <span class="kpi-card__subtitle">Adthena brand mentions · top group</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Citation Trend + Share of Citations donut -->
+    <div class="g-6040">
+
+      <!-- Citation Frequency Trend (canvas chart) -->
+      <!-- ✅ card-header--standalone used as card top — no inline overrides -->
+      <div style="border-radius:12px;overflow:hidden">
+        <div class="card-header card-header--standalone">
+          <div class="card-header__roundel">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="white" stroke-width="1.3" d="M1 12l4-4 3 3 4-5 4 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="card-header__title-section">
+            <div class="card-header__title-row">
+              <span class="card-header__title">Citation Frequency Trend</span>
+            </div>
+            <span class="card-header__subtitle">Top 6 domains · 28 Apr – 27 May 2026</span>
+          </div>
+          <div class="card-header__actions">
+            <button class="card-header__action-btn" aria-label="Download">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path stroke="#485982" stroke-width="1.3" stroke-linecap="round" d="M7 2v7M4 7l3 3 3-3M2 12h10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="background:white;padding:24px">
+          <div class="trend-chart-wrap">
+            <canvas id="trendCanvas" class="trend-chart-canvas"></canvas>
+            <div class="trend-chart-tooltip" id="trendTooltip"></div>
+          </div>
+          <div class="trend-legend" id="trendLegend"></div>
+          <!-- ✅ insight-banner verbatim from insight-banner/demo.html -->
+          <div class="insight-banner" style="margin-top:16px">
+            <div class="insight-banner__icon-wrap">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#3589e9" stroke-width="1.3"/><path d="M7 4v4" stroke="#3589e9" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.75" fill="#3589e9"/></svg>
+            </div>
+            <div class="insight-banner__text">
+              <span class="insight-banner__label">Insight</span>
+              <p class="insight-banner__body">Adthena's citation frequency peaked at 15.6% on 22 May — driven by a surge in "Best paid search tools" prompt responses. Prompt-level attribution <strong>coming soon.</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: donut + avg position -->
+      <div class="g-stack">
+
+        <!-- Share of Citations donut -->
+        <!-- ✅ card-header--standalone used as card top — no inline overrides -->
+        <div style="border-radius:12px;overflow:hidden">
+          <div class="card-header card-header--standalone">
+            <div class="card-header__roundel">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="white" stroke-width="1.3"/><path stroke="white" stroke-width="1.3" d="M8 8L8 1.5"/><path stroke="white" stroke-width="1.3" d="M8 8L14 11"/></svg>
+            </div>
+            <div class="card-header__title-section">
+              <div class="card-header__title-row">
+                <span class="card-header__title">Share of Citations</span>
+              </div>
+              <span class="card-header__subtitle">ChatGPT · Top 5 domains</span>
+            </div>
+          </div>
+          <div style="background:white;padding:24px">
+            <div style="display:flex;align-items:center;gap:24px;justify-content:center">
+              <!-- ✅ donut-chart verbatim from donut-chart/demo.html -->
+              <div class="donut-chart" id="donut-citations">
+                <svg class="donut-chart__svg" viewBox="0 0 248 248"></svg>
+                <div class="donut-chart__label">
+                  <div class="donut-chart__value-row">
+                    <span class="donut-chart__value">23</span>
+                    <span class="donut-chart__unit">%</span>
+                  </div>
+                  <span class="donut-chart__subtitle">Adthena<br>share</span>
+                </div>
+              </div>
+              <!-- ✅ chart-legend-item verbatim from donut-chart/demo.html -->
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div class="chart-legend-item">
+                  <span class="chart-legend-item__dot" style="background:#b3a2e7"></span>
+                  <span class="chart-legend-item__label chart-legend-item__label--brand">adthena.com</span>
+                </div>
+                <div class="chart-legend-item">
+                  <span class="chart-legend-item__dot" style="background:#64abfb"></span>
+                  <span class="chart-legend-item__label">reddit.com</span>
+                </div>
+                <div class="chart-legend-item">
+                  <span class="chart-legend-item__dot" style="background:#d47dd4"></span>
+                  <span class="chart-legend-item__label">techradar.com</span>
+                </div>
+                <div class="chart-legend-item">
+                  <span class="chart-legend-item__dot" style="background:#e86492"></span>
+                  <span class="chart-legend-item__label">spyfu.com</span>
+                </div>
+                <div class="chart-legend-item">
+                  <span class="chart-legend-item__dot" style="background:#8ac8b1"></span>
+                  <span class="chart-legend-item__label">semrush.com</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avg citation position by domain -->
+        <!-- ✅ avg-position (cit-pos__*) verbatim from avg-position/demo.html — replaces .pos-row/.pos-badge -->
+        <div style="border-radius:12px;overflow:hidden">
+          <div class="card-header card-header--standalone">
+            <div class="card-header__roundel">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="white" stroke-width="1.3" stroke-linecap="round" d="M8 2v12M4 6l4-4 4 4M4 14h8"/></svg>
+            </div>
+            <div class="card-header__title-section">
+              <div class="card-header__title-row">
+                <span class="card-header__title">Avg. Citation Position</span>
+              </div>
+              <span class="card-header__subtitle">By domain · lower = better</span>
+            </div>
+          </div>
+          <div style="background:white;padding:12px 0 0">
+            <!-- ✅ cit-pos__list verbatim structure from avg-position/demo.html -->
+            <div class="cit-pos__list" id="positionList"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Domain Performance + Prompt Groups -->
+    <div class="g-2col">
+
+      <!-- Domain Performance Table -->
+      <!-- ✅ card-header--standalone used as card top — no inline overrides -->
+      <div style="border-radius:12px;overflow:hidden">
+        <div class="card-header card-header--standalone">
+          <div class="card-header__roundel">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="white" stroke-width="1.3"/><path d="M1 6h14" stroke="white" stroke-width="1.3"/></svg>
+          </div>
+          <div class="card-header__title-section">
+            <div class="card-header__title-row">
+              <span class="card-header__title">Domain Performance</span>
+            </div>
+            <span class="card-header__subtitle">Ranked by performance score · ChatGPT</span>
+          </div>
+          <div class="card-header__actions">
+            <button class="card-header__action-btn" aria-label="Download">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path stroke="#485982" stroke-width="1.3" stroke-linecap="round" d="M7 2v7M4 7l3 3 3-3M2 12h10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="background:white;padding:0 24px 24px">
+          <table class="perf-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Domain</th>
+                <th>Frequency</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody id="perfTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Prompt Group Performance -->
+      <!-- ✅ card-header--standalone used as card top — no inline overrides -->
+      <div style="border-radius:12px;overflow:hidden">
+        <div class="card-header card-header--standalone">
+          <div class="card-header__roundel">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="white" stroke-width="1.3" stroke-linecap="round" d="M2 4h12M2 8h8M2 12h10"/></svg>
+          </div>
+          <div class="card-header__title-section">
+            <div class="card-header__title-row">
+              <span class="card-header__title">Prompt Group Performance</span>
+            </div>
+            <span class="card-header__subtitle">Brand share of mentions by query group</span>
+          </div>
+        </div>
+        <div style="background:white;padding:0 24px 24px">
+          <!-- ✅ sub-tab container: plain div with inline styles from sub-tab/demo.html — replaces class="subtab-rail" -->
+          <div style="background:#fafafa;border-radius:40px;padding:6px;display:inline-flex;gap:4px;margin-bottom:16px">
+            <div class="subtab subtab--active">Brand Share</div>
+            <div class="subtab">Citation Count</div>
+            <div class="subtab">Unique Domains</div>
+          </div>
+          <div class="prompt-list" id="promptList"></div>
+          <!-- ✅ insight-banner verbatim from insight-banner/demo.html -->
+          <div class="insight-banner" style="margin-top:16px">
+            <div class="insight-banner__icon-wrap">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#3589e9" stroke-width="1.3"/><path d="M7 4v4" stroke="#3589e9" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.75" fill="#3589e9"/></svg>
+            </div>
+            <div class="insight-banner__text">
+              <span class="insight-banner__label">Insight</span>
+              <p class="insight-banner__body">Strong brand presence (37.7%) in Adthena brand queries. Near-zero share in competitor comparison groups — opportunity for SEMrush and SimilarWeb category queries. <strong>Coming soon.</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Adthena metrics over time -->
+    <!-- ✅ mclc placed directly without .card wrapper — mclc IS its own card -->
+    <div style="border-radius:12px;overflow:hidden">
+      <div class="card-header card-header--standalone">
+        <div class="card-header__roundel">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path stroke="white" stroke-width="1.3" d="M1 12l4-4 3 3 4-5 4 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="card-header__title-section">
+          <div class="card-header__title-row">
+            <span class="card-header__title">Adthena — Performance Metrics Over Time</span>
+          </div>
+          <span class="card-header__subtitle">Daily citation frequency &amp; avg. position · 28 Apr – 27 May 2026</span>
+        </div>
+        <div class="card-header__actions">
+          <button class="card-header__action-btn" aria-label="Download">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path stroke="#485982" stroke-width="1.3" stroke-linecap="round" d="M7 2v7M4 7l3 3 3-3M2 12h10"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ✅ mclc verbatim from multi-chart-lines/demo.html — no outer .card wrapper -->
+      <div class="mclc">
+        <div class="mclc__body">
+
+          <!-- Row 1: Citation Frequency (purple) -->
+          <div class="mclc__row">
+            <div class="mclc__kpi" style="color:#b3a2e7">
+              <div class="mclc__kpi-inner">
+                <span class="mclc__kpi-label">Citation Freq.</span>
+                <span class="mclc__kpi-value">5.7<span style="font-size:14px">%</span></span>
+                <span class="mclc__kpi-delta mclc__kpi-delta--up">↑ trending up</span>
+              </div>
+            </div>
+            <div class="mclc__chart">
+              <div class="mclc__y-labels">
+                <span>16%</span>
+                <span>0%</span>
+              </div>
+              <div class="mclc__canvas-wrap">
+                <div class="mclc__bands">
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                </div>
+                <svg class="mclc__svg"
+                     viewBox="0 0 100 100"
+                     preserveAspectRatio="none"
+                     data-color="#b3a2e7"
+                     data-ymin="0"
+                     data-ymax="16"
+                     data-start="2026-04-28"
+                     data-vals="0.195,0.108,0.245,0.276,0.255,0.278,0.189,0.348,0.326,0.250,0.316,0.308,0.114,0.750,0.500,0.291,0.291,0.472,0.446,0.568,0.436,0.504,0.973,0.646,0.406,0.381,0.313,0.556">
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="mclc__divider"></div>
+
+          <!-- Row 2: Avg Position (blue) -->
+          <div class="mclc__row">
+            <div class="mclc__kpi" style="color:#64abfb">
+              <div class="mclc__kpi-inner">
+                <span class="mclc__kpi-label">Avg. Position</span>
+                <span class="mclc__kpi-value">5.0</span>
+                <span class="mclc__kpi-delta mclc__kpi-delta--flat">~stable</span>
+              </div>
+            </div>
+            <div class="mclc__chart">
+              <div class="mclc__y-labels">
+                <span>10</span>
+                <span>1</span>
+              </div>
+              <div class="mclc__canvas-wrap">
+                <div class="mclc__bands">
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                  <div class="mclc__band"></div>
+                </div>
+                <svg class="mclc__svg"
+                     viewBox="0 0 100 100"
+                     preserveAspectRatio="none"
+                     data-color="#64abfb"
+                     data-ymin="1"
+                     data-ymax="10"
+                     data-start="2026-04-28"
+                     data-vals="0.522,0.222,0.200,0.144,0.511,0.333,0.511,0.211,0.311,0.500,0.322,0.756,0.111,0.711,0.600,0.511,0.289,0.267,0.300,0.267,0.144,0.544,0.444,0.189,0.478,0.444,0.433,0.456">
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- X-axis date labels -->
+          <div class="mclc__x-axis">
+            <div class="mclc__x-kpi-spacer"></div>
+            <div class="mclc__x-chart">
+              <span class="mclc__x-y-spacer">16%</span>
+              <div class="mclc__x-labels">
+                <span class="mclc__x-label">28 Apr, 2026</span>
+                <span class="mclc__x-label">5 May, 2026</span>
+                <span class="mclc__x-label">12 May, 2026</span>
+                <span class="mclc__x-label">19 May, 2026</span>
+                <span class="mclc__x-label">27 May, 2026</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- insight-banner in its own white area below mclc -->
+      <div style="background:white;padding:16px 24px 24px">
+        <!-- ✅ insight-banner verbatim from insight-banner/demo.html -->
+        <div class="insight-banner">
+          <div class="insight-banner__icon-wrap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#3589e9" stroke-width="1.3"/><path d="M7 4v4" stroke="#3589e9" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.75" fill="#3589e9"/></svg>
+          </div>
+          <div class="insight-banner__text">
+            <span class="insight-banner__label">Insight</span>
+            <p class="insight-banner__body">Citation frequency trending upward in the second half of May — peaked at 15.6% on 22 May. Avg position stabilised around 5.0, indicating consistent mid-page citation placement. Link-level position breakdown <strong>coming soon.</strong></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- ── donut-chart.js verbatim ──────────────────────────────────────────────── -->
+<script>
+function drawDonut(containerId, segments, total) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var svg = el.querySelector('svg');
+  if (!svg) return;
+  var cx = 124, cy = 124, r = 90, stroke = 28;
+  var circumference = 2 * Math.PI * r;
+  var offset = 0;
+  svg.innerHTML = '';
+  var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', r);
+  bg.setAttribute('fill', 'none'); bg.setAttribute('stroke', '#e8edf5');
+  bg.setAttribute('stroke-width', stroke);
+  svg.appendChild(bg);
+  segments.forEach(function(seg) {
+    var pct = seg.value / total;
+    var len = pct * circumference;
+    var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', seg.color);
+    circle.setAttribute('stroke-width', stroke);
+    circle.setAttribute('stroke-dasharray', len + ' ' + (circumference - len));
+    circle.setAttribute('stroke-dashoffset', -offset * circumference / total + circumference * 0.25);
+    circle.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(circle);
+    offset += seg.value;
+  });
+}
+</script>
+
+<!-- ── multi-chart-lines.js verbatim ───────────────────────────────────────── -->
+<script>
+(function () {
+  'use strict';
+  function smoothPath(vals) {
+    var t = 0.35;
+    var n = vals.length;
+    var pts = vals.map(function (v, i) {
+      return [i / (n - 1) * 100, (1 - v) * 100];
+    });
+    var d = 'M' + pts[0][0].toFixed(2) + ',' + pts[0][1].toFixed(2);
+    for (var i = 0; i < n - 1; i++) {
+      var p0 = pts[Math.max(0, i - 1)];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[Math.min(n - 1, i + 2)];
+      d += ' C' + [
+        p1[0] + (p2[0] - p0[0]) * t, p1[1] + (p2[1] - p0[1]) * t,
+        p2[0] - (p3[0] - p1[0]) * t, p2[1] - (p3[1] - p1[1]) * t,
+        p2[0], p2[1]
+      ].map(function (x) { return x.toFixed(2); }).join(',');
+    }
+    return d;
+  }
+  function mclcDrawAll(animate) {
+    document.querySelectorAll('.mclc__svg[data-vals]').forEach(function (svg, idx) {
+      var alreadyDrawn = !!svg.querySelector('path');
+      if (alreadyDrawn) {
+        if (animate) mclcAnimate(svg, idx * 120);
+        return;
+      }
+      var vals     = svg.dataset.vals.split(',').map(Number);
+      var color    = svg.dataset.color || '#6848c6';
+      var linePath = smoothPath(vals);
+      var areaPath = linePath + ' L100,100 L0,100 Z';
+      var gid      = 'mg' + Math.random().toString(36).slice(2, 8);
+      svg.innerHTML =
+        '<defs>' +
+          '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%"   stop-color="' + color + '" stop-opacity="0.22"/>' +
+            '<stop offset="100%" stop-color="' + color + '" stop-opacity="0.02"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        '<path d="' + areaPath + '" fill="url(#' + gid + ')" stroke="none"/>' +
+        '<path d="' + linePath + '" fill="none" stroke="' + color + '"' +
+             ' stroke-width="2.5" stroke-linecap="round"' +
+             ' vector-effect="non-scaling-stroke"/>';
+      initHover(svg);
+      if (animate) mclcAnimate(svg, idx * 120);
+    });
+  }
+  function mclcAnimate(svg, delay) {
+    var defs = svg.querySelector('defs');
+    if (!defs) return;
+    var clipId   = 'mclc-clip-' + Math.random().toString(36).slice(2, 7);
+    var clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    clipRect.setAttribute('x', '-2');
+    clipRect.setAttribute('y', '-20');
+    clipRect.setAttribute('width', '0');
+    clipRect.setAttribute('height', '140');
+    var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+    clipPath.setAttribute('id', clipId);
+    clipPath.appendChild(clipRect);
+    defs.appendChild(clipPath);
+    svg.querySelectorAll('path').forEach(function (p) {
+      p.setAttribute('clip-path', 'url(#' + clipId + ')');
+    });
+    var duration = 900;
+    function ease(t) { return 1 - Math.pow(1 - t, 3); }
+    setTimeout(function () {
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var t = Math.min((ts - start) / duration, 1);
+        clipRect.setAttribute('width', (ease(t) * 105).toFixed(3));
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          svg.querySelectorAll('path').forEach(function (p) {
+            p.removeAttribute('clip-path');
+          });
+          clipPath.remove();
+        }
+      }
+      requestAnimationFrame(step);
+    }, delay);
+  }
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(isoStr, offsetDays) {
+    if (!isoStr) return '';
+    var d = new Date(isoStr + 'T00:00:00');
+    d.setDate(d.getDate() + offsetDays);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + ', ' + d.getFullYear();
+  }
+  function initHover(svg) {
+    var wrap = svg.parentNode;
+    if (!wrap) return;
+    var color    = svg.dataset.color  || '#6848c6';
+    var ymin     = parseFloat(svg.dataset.ymin  || '0');
+    var ymax     = parseFloat(svg.dataset.ymax  || '100');
+    var startStr = svg.dataset.start  || '';
+    var nPts     = (svg.dataset.vals  || '').split(',').length || 30;
+    var paths    = svg.querySelectorAll('path');
+    var line     = paths[paths.length - 1];
+    if (!line) return;
+    var dot = document.createElement('div');
+    dot.className = 'mclc__hover-dot';
+    dot.style.background = color;
+    wrap.appendChild(dot);
+    var tip = document.createElement('div');
+    tip.className = 'mclc__hover-tooltip';
+    wrap.appendChild(tip);
+    var totalLen = line.getTotalLength();
+    var vb       = svg.viewBox.baseVal;
+    function positionAt(xFrac) {
+      var lo = 0, hi = totalLen;
+      for (var i = 0; i < 24; i++) {
+        var mid = (lo + hi) / 2;
+        if (line.getPointAtLength(mid).x / vb.width < xFrac) lo = mid; else hi = mid;
+      }
+      var pt    = line.getPointAtLength((lo + hi) / 2);
+      var svgR  = svg.getBoundingClientRect();
+      var wrapR = wrap.getBoundingClientRect();
+      var domX  = (svgR.left - wrapR.left) + (pt.x / vb.width)  * svgR.width;
+      var domY  = (svgR.top  - wrapR.top)  + (pt.y / vb.height) * svgR.height;
+      dot.style.left = domX + 'px';
+      dot.style.top  = domY + 'px';
+      tip.style.left = domX + 'px';
+      tip.style.top  = (domY - 8) + 'px';
+      var val     = (ymin + (1 - pt.y / vb.height) * (ymax - ymin)).toFixed(1);
+      var idx     = Math.round(xFrac * (nPts - 1));
+      var dateStr = fmtDate(startStr, idx);
+      tip.innerHTML = dateStr
+        ? '<span style="display:block;font-weight:400;opacity:0.72;font-size:10px;line-height:1.3">'
+            + dateStr + '</span>' + val
+        : val;
+    }
+    wrap.addEventListener('mouseenter', function () {
+      dot.style.opacity = '1';
+      tip.style.opacity = '1';
+    });
+    wrap.addEventListener('mouseleave', function () {
+      dot.style.opacity = '0';
+      tip.style.opacity = '0';
+    });
+    wrap.addEventListener('mousemove', function (e) {
+      var svgR = svg.getBoundingClientRect();
+      positionAt(Math.max(0.01, Math.min(0.99, (e.clientX - svgR.left) / svgR.width)));
+    });
+  }
+  function mclcInit(animate) {
+    mclcDrawAll(animate);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { mclcInit(true); });
+  } else {
+    mclcInit(true);
+  }
+  window.mclcInit = mclcInit;
+})();
+</script>
+
+<!-- ✅ app-bar.js component -->
+<script src="components/app-bar/app-bar.js"></script>
+
+<!-- ✅ main-nav.js component -->
+<script src="components/main-nav/main-nav.js"></script>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+const DOMAIN_COLORS = {
+  'adthena.com':          '#b3a2e7',
+  'reddit.com':           '#64abfb',
+  'techradar.com':        '#d47dd4',
+  'spyfu.com':            '#e86492',
+  'semrush.com':          '#8ac8b1',
+  'ppc.io':               '#53bdc5',
+  'google.com':           '#ff7a1a',
+  'searchengineland.com': '#de5a5a',
+};
+
+const domainPerf = [
+  { domain:'reddit.com',           score:90.6, freq:0.0779, citPos:9.7  },
+  { domain:'adthena.com',          score:86.9, freq:0.0573, citPos:5.0  },
+  { domain:'spyfu.com',            score:84.9, freq:0.0336, citPos:3.1  },
+  { domain:'semrush.com',          score:80.2, freq:0.0312, citPos:4.5  },
+  { domain:'google.com',           score:77.1, freq:0.0243, citPos:5.8  },
+  { domain:'techradar.com',        score:75.6, freq:0.0536, citPos:6.1  },
+  { domain:'similarweb.com',       score:71.9, freq:0.0224, citPos:5.4  },
+  { domain:'ppc.io',               score:57.1, freq:0.0280, citPos:4.9  },
+  { domain:'searchengineland.com', score:51.8, freq:0.0224, citPos:5.8  },
+  { domain:'ahrefs.com',           score:51.5, freq:0.0012, citPos:9.0  },
+];
+
+const promptGroups = [
+  { group:'Adthena brand',                  citations:351, share:0.3774 },
+  { group:'Brand protection',               citations:356, share:0.2059 },
+  { group:'Market Share',                   citations:89,  share:0.1082 },
+  { group:'Competitor: Auction Insights',   citations:316, share:0.1028 },
+  { group:'Google Paid Search',             citations:177, share:0.0865 },
+  { group:'Best paid search tools',         citations:450, share:0.0523 },
+  { group:'AI Search',                      citations:375, share:0.0109 },
+  { group:'Competitor: SEMrush',            citations:271, share:0.0083 },
+  { group:'Competitor: SimilarWeb',         citations:264, share:0.0000 },
+];
+
+const trendData = {
+  'adthena.com': [
+    {d:'2026-04-28',f:0.0312},{d:'2026-04-29',f:0.0172},{d:'2026-04-30',f:0.0392},
+    {d:'2026-05-01',f:0.0441},{d:'2026-05-03',f:0.0444},{d:'2026-05-05',f:0.0556},
+    {d:'2026-05-06',f:0.0521},{d:'2026-05-08',f:0.0400},{d:'2026-05-09',f:0.0506},
+    {d:'2026-05-10',f:0.0492},{d:'2026-05-13',f:0.1200},{d:'2026-05-14',f:0.0800},
+    {d:'2026-05-16',f:0.0465},{d:'2026-05-17',f:0.0755},{d:'2026-05-18',f:0.0714},
+    {d:'2026-05-19',f:0.0909},{d:'2026-05-20',f:0.0698},{d:'2026-05-22',f:0.1556},
+    {d:'2026-05-23',f:0.1034},{d:'2026-05-25',f:0.0610},{d:'2026-05-27',f:0.0889},
+  ],
+  'reddit.com': [
+    {d:'2026-04-28',f:0.0469},{d:'2026-04-29',f:0.0345},{d:'2026-04-30',f:0.0588},
+    {d:'2026-05-01',f:0.0147},{d:'2026-05-03',f:0.0222},{d:'2026-05-05',f:0.0556},
+    {d:'2026-05-06',f:0.0417},{d:'2026-05-08',f:0.2000},{d:'2026-05-09',f:0.0506},
+    {d:'2026-05-12',f:0.0732},{d:'2026-05-14',f:0.2200},{d:'2026-05-15',f:0.2093},
+    {d:'2026-05-16',f:0.1163},{d:'2026-05-18',f:0.0952},{d:'2026-05-19',f:0.1591},
+    {d:'2026-05-20',f:0.1628},{d:'2026-05-22',f:0.0889},{d:'2026-05-23',f:0.0690},
+    {d:'2026-05-24',f:0.0909},{d:'2026-05-25',f:0.0732},{d:'2026-05-27',f:0.1111},
+  ],
+  'techradar.com': [
+    {d:'2026-04-28',f:0.0312},{d:'2026-04-29',f:0.0690},{d:'2026-04-30',f:0.0588},
+    {d:'2026-05-01',f:0.0588},{d:'2026-05-02',f:0.0612},{d:'2026-05-04',f:0.0606},
+    {d:'2026-05-06',f:0.0625},{d:'2026-05-09',f:0.0506},{d:'2026-05-10',f:0.0492},
+    {d:'2026-05-13',f:0.1200},{d:'2026-05-15',f:0.0698},{d:'2026-05-17',f:0.0755},
+    {d:'2026-05-18',f:0.1190},{d:'2026-05-19',f:0.0682},{d:'2026-05-22',f:0.0667},
+    {d:'2026-05-24',f:0.0390},{d:'2026-05-25',f:0.0488},{d:'2026-05-27',f:0.0222},
+  ],
+  'spyfu.com': [
+    {d:'2026-04-28',f:0.0156},{d:'2026-04-30',f:0.0392},{d:'2026-05-01',f:0.0588},
+    {d:'2026-05-02',f:0.0408},{d:'2026-05-03',f:0.0667},{d:'2026-05-04',f:0.0455},
+    {d:'2026-05-06',f:0.0417},{d:'2026-05-10',f:0.0492},{d:'2026-05-12',f:0.0488},
+    {d:'2026-05-16',f:0.0465},{d:'2026-05-17',f:0.0566},{d:'2026-05-18',f:0.0476},
+    {d:'2026-05-19',f:0.0455},{d:'2026-05-22',f:0.0222},{d:'2026-05-23',f:0.0690},
+    {d:'2026-05-24',f:0.0260},{d:'2026-05-25',f:0.0366},{d:'2026-05-27',f:0.0222},
+  ],
+  'semrush.com': [
+    {d:'2026-04-28',f:0.0312},{d:'2026-04-29',f:0.0517},{d:'2026-04-30',f:0.0392},
+    {d:'2026-05-01',f:0.0147},{d:'2026-05-03',f:0.0222},{d:'2026-05-06',f:0.0312},
+    {d:'2026-05-11',f:0.0364},{d:'2026-05-13',f:0.0600},{d:'2026-05-14',f:0.0800},
+    {d:'2026-05-15',f:0.0465},{d:'2026-05-17',f:0.0189},{d:'2026-05-19',f:0.0455},
+    {d:'2026-05-20',f:0.0465},{d:'2026-05-22',f:0.0444},{d:'2026-05-23',f:0.0345},
+    {d:'2026-05-25',f:0.0366},{d:'2026-05-26',f:0.0667},{d:'2026-05-27',f:0.0222},
+  ],
+  'ppc.io': [
+    {d:'2026-04-28',f:0.0469},{d:'2026-04-29',f:0.0690},{d:'2026-04-30',f:0.0588},
+    {d:'2026-05-01',f:0.0441},{d:'2026-05-02',f:0.0408},{d:'2026-05-04',f:0.0606},
+    {d:'2026-05-05',f:0.0556},{d:'2026-05-10',f:0.0492},{d:'2026-05-12',f:0.0732},
+    {d:'2026-05-15',f:0.0233},{d:'2026-05-17',f:0.0189},{d:'2026-05-21',f:0.0323},
+    {d:'2026-05-24',f:0.0260},{d:'2026-05-25',f:0.0244},{d:'2026-05-27',f:0.0222},
+  ],
+};
+
+// ── BUILD PERF TABLE ─────────────────────────────────────────────────────────
+(function buildPerfTable() {
+  const tbody = document.getElementById('perfTableBody');
+  const maxScore = Math.max(...domainPerf.map(d => d.score));
+  domainPerf.forEach((row, i) => {
+    const rank = i + 1;
+    const pct = (row.freq * 100).toFixed(1);
+    const isBrand = row.domain === 'adthena.com';
+    const color = DOMAIN_COLORS[row.domain] || '#d3dbe6';
+    const fillPct = (row.score / maxScore * 100).toFixed(1);
+    const badgeClass = rank <= 3 ? `rank-badge rank-badge--${rank}` : 'rank-badge';
+    tbody.innerHTML += `
+      <tr>
+        <td><span class="${badgeClass}">${rank}</span></td>
+        <td>
+          <div class="perf-table__domain">
+            ${row.domain}
+            ${isBrand ? '<span class="perf-table__brand-tag">You</span>' : ''}
+          </div>
+        </td>
+        <td>${pct}%</td>
+        <td>
+          <div class="perf-table__score-bar">
+            <div class="perf-table__bar-track">
+              <div class="perf-table__bar-fill" style="width:${fillPct}%;background:${color}"></div>
+            </div>
+            <span class="perf-table__score-val">${row.score}</span>
+          </div>
+        </td>
+      </tr>`;
+  });
+})();
+
+// ── BUILD PROMPT LIST ────────────────────────────────────────────────────────
+(function buildPromptList() {
+  const el = document.getElementById('promptList');
+  const maxShare = Math.max(...promptGroups.map(p => p.share));
+  promptGroups.forEach(p => {
+    const sharePct = (p.share * 100).toFixed(1);
+    const barW = (p.share / (maxShare || 1) * 100).toFixed(1);
+    let chipColor = 'neutral';
+    if (p.share >= 0.2) chipColor = 'green';
+    else if (p.share >= 0.05) chipColor = 'blue';
+    else if (p.share > 0) chipColor = 'neutral';
+    else chipColor = 'red';
+
+    el.innerHTML += `
+      <div class="prompt-row">
+        <div class="prompt-row__name" title="${p.group}">${p.group}</div>
+        <div class="prompt-row__bar-wrap">
+          <div class="prompt-row__bar-track">
+            <div class="prompt-row__bar-fill" style="width:${barW}%"></div>
+          </div>
+        </div>
+        <div class="prompt-row__count">${p.citations}</div>
+        <span class="ds-chip ds-chip--light ds-chip--${chipColor}"><span class="ds-chip__label">${sharePct}%</span></span>
+      </div>`;
+  });
+})();
+
+// ── BUILD DONUT ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  drawDonut('donut-citations', [
+    { value: 22.6, color: '#b3a2e7' },
+    { value: 30.7, color: '#64abfb' },
+    { value: 21.1, color: '#d47dd4' },
+    { value: 13.2, color: '#e86492' },
+    { value: 12.3, color: '#8ac8b1' }
+  ], 100);
+});
+
+// ── BUILD POSITION LIST (avg-position / cit-pos__* component) ───────────────
+// ✅ Uses cit-pos__* classes verbatim from avg-position/demo.html — replaces .pos-row/.pos-badge
+(function buildPositionList() {
+  const el = document.getElementById('positionList');
+  const items = [
+    { domain:'spyfu.com',      pos:3.1, brand:false },
+    { domain:'semrush.com',    pos:4.5, brand:false },
+    { domain:'ppc.io',         pos:4.9, brand:false },
+    { domain:'adthena.com',    pos:5.0, brand:true  },
+    { domain:'similarweb.com', pos:5.4, brand:false },
+    { domain:'google.com',     pos:5.8, brand:false },
+    { domain:'techradar.com',  pos:6.1, brand:false },
+    { domain:'reddit.com',     pos:9.7, brand:false },
+  ].sort((a, b) => a.pos - b.pos);
+
+  const faviconSvg = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#496f97" stroke-width="1.2"/></svg>`;
+
+  items.forEach((item, i) => {
+    const rank = i + 1;
+    const brandMod = item.brand ? '--brand' : '';
+    const deltaClass = item.pos <= 4 ? 'cit-pos__delta--up' : item.pos <= 6.5 ? 'cit-pos__delta--flat' : 'cit-pos__delta--down';
+    el.innerHTML += `
+      <div class="cit-pos__row">
+        <span class="cit-pos__num${item.brand ? ' cit-pos__num--brand' : ''}">${rank}</span>
+        <div class="cit-pos__favicon">${faviconSvg}</div>
+        <div class="cit-pos__domain${item.brand ? ' cit-pos__domain--brand' : ''}">${item.domain}</div>
+        <span class="cit-pos__delta ${deltaClass}">${item.pos.toFixed(1)}</span>
+      </div>`;
+  });
+})();
+
+// ── CITATION TREND CHART (Canvas) ────────────────────────────────────────────
+(function buildTrendChart() {
+  const canvas = document.getElementById('trendCanvas');
+  const tooltip = document.getElementById('trendTooltip');
+  const legendEl = document.getElementById('trendLegend');
+  const dpr = window.devicePixelRatio || 1;
+
+  const DOMAINS = Object.keys(trendData);
+  const allDates = [...new Set(DOMAINS.flatMap(d => trendData[d].map(p => p.d)))].sort();
+
+  function getSeriesValues(domain) {
+    const map = {};
+    trendData[domain].forEach(p => map[p.d] = p.f);
+    return allDates.map(d => map[d] ?? null);
+  }
+
+  let hiddenDomains = new Set();
+
+  function draw() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const W = rect.width;
+    const H = 220;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const PAD = { top: 12, right: 16, bottom: 24, left: 40 };
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top - PAD.bottom;
+    let maxF = 0;
+    DOMAINS.forEach(d => {
+      if (!hiddenDomains.has(d)) {
+        trendData[d].forEach(p => { if (p.f > maxF) maxF = p.f; });
+      }
+    });
+    maxF = Math.ceil(maxF * 10) / 10 || 0.3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+      const y = PAD.top + cH * (1 - t);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.font = `10px 'Open Sans', sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.fillText((maxF * t * 100).toFixed(0) + '%', PAD.left - 4, y + 3.5);
+    });
+    const labelDates = allDates.filter((_, i) => i % 7 === 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.font = `10px 'Open Sans', sans-serif`;
+    ctx.textAlign = 'center';
+    labelDates.forEach(d => {
+      const xi = allDates.indexOf(d);
+      const x = PAD.left + (xi / (allDates.length - 1)) * cW;
+      const label = d.slice(5).replace('-', ' ');
+      ctx.fillText(label, x, H - 4);
+    });
+    DOMAINS.forEach(domain => {
+      if (hiddenDomains.has(domain)) return;
+      const vals = getSeriesValues(domain);
+      const color = DOMAIN_COLORS[domain] || '#ccc';
+      const isBrand = domain === 'adthena.com';
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isBrand ? 2.5 : 1.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      if (!isBrand) ctx.globalAlpha = 0.65;
+      ctx.beginPath();
+      let started = false;
+      vals.forEach((v, i) => {
+        if (v === null) return;
+        const x = PAD.left + (i / (allDates.length - 1)) * cW;
+        const y = PAD.top + cH * (1 - v / maxF);
+        if (!started) { ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  DOMAINS.forEach(domain => {
+    const color = DOMAIN_COLORS[domain] || '#ccc';
+    const isBrand = domain === 'adthena.com';
+    const item = document.createElement('div');
+    item.className = 'trend-legend__item';
+    item.innerHTML = `<div class="trend-legend__dot" style="background:${color}"></div><span style="${isBrand ? 'font-weight:600' : ''}">${domain}</span>`;
+    item.addEventListener('click', () => {
+      if (hiddenDomains.has(domain)) hiddenDomains.delete(domain);
+      else hiddenDomains.add(domain);
+      item.style.opacity = hiddenDomains.has(domain) ? '0.35' : '1';
+      draw();
+    });
+    legendEl.appendChild(item);
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const W = rect.width;
+    const PAD = { left: 40, right: 16, top: 12 };
+    const cW = W - PAD.left - PAD.right;
+    const dates = [...new Set(DOMAINS.flatMap(d => trendData[d].map(p => p.d)))].sort();
+    const xi = Math.round((mx - PAD.left) / cW * (dates.length - 1));
+    if (xi < 0 || xi >= dates.length) { tooltip.style.display = 'none'; return; }
+    const date = dates[xi];
+    let html = `<strong>${date}</strong><br>`;
+    DOMAINS.filter(d => !hiddenDomains.has(d)).forEach(domain => {
+      const pt = trendData[domain].find(p => p.d === date);
+      if (pt) {
+        html += `<span style="color:${DOMAIN_COLORS[domain]}">●</span> ${domain}: ${(pt.f*100).toFixed(1)}%<br>`;
+      }
+    });
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(mx + 12, W - 180) + 'px';
+    tooltip.style.top = (e.clientY - rect.top - 40) + 'px';
+  });
+  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+  draw();
+  window.addEventListener('resize', draw);
+})();
+</script>
+
+</body>
+</html>

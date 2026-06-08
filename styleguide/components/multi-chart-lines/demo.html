@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Chart Lines — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,300;75,400;75,600;100,300;100,400;100,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="multi-chart-lines.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #f0f2f5;
+      font-family: 'Open Sans', sans-serif;
+    }
+    .card-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      /* The component itself is white — drop it on any coloured background */
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card-wrapper">
+
+    <div class="mclc">
+      <div class="mclc__body">
+
+        <!-- ── Row 1: Mentions (purple) ────────────────────────────────── -->
+        <div class="mclc__row">
+          <div class="mclc__kpi" style="color:#6848c6">
+            <div class="mclc__kpi-inner">
+              <span class="mclc__kpi-label">Mentions</span>
+              <span class="mclc__kpi-value">744</span>
+              <span class="mclc__kpi-delta mclc__kpi-delta--up">+22%</span>
+            </div>
+          </div>
+          <div class="mclc__chart">
+            <div class="mclc__y-labels">
+              <span>800</span>
+              <span>0</span>
+            </div>
+            <div class="mclc__canvas-wrap">
+              <div class="mclc__bands">
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+              </div>
+              <!--
+                data-color  hex colour for line + gradient
+                data-ymin   y-axis minimum value
+                data-ymax   y-axis maximum value (matches top label)
+                data-start  ISO date of first data point — enables date tooltip
+                data-vals   30 normalised values 0-1, comma-separated
+              -->
+              <svg class="mclc__svg"
+                   viewBox="0 0 100 100"
+                   preserveAspectRatio="none"
+                   data-color="#6848c6"
+                   data-ymin="0"
+                   data-ymax="800"
+                   data-start="2026-04-21"
+                   data-vals="0.76,0.77,0.76,0.78,0.77,0.79,0.78,0.80,0.79,0.81,0.80,0.82,0.81,0.83,0.82,0.84,0.83,0.85,0.84,0.86,0.85,0.87,0.86,0.88,0.87,0.89,0.88,0.90,0.91,0.93">
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="mclc__divider"></div>
+
+        <!-- ── Row 2: Citations (blue) ──────────────────────────────────── -->
+        <div class="mclc__row">
+          <div class="mclc__kpi" style="color:#3785dd">
+            <div class="mclc__kpi-inner">
+              <span class="mclc__kpi-label">Citations</span>
+              <span class="mclc__kpi-value">252</span>
+              <span class="mclc__kpi-delta mclc__kpi-delta--down">-16%</span>
+            </div>
+          </div>
+          <div class="mclc__chart">
+            <div class="mclc__y-labels">
+              <span>400</span>
+              <span>0</span>
+            </div>
+            <div class="mclc__canvas-wrap">
+              <div class="mclc__bands">
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+              </div>
+              <svg class="mclc__svg"
+                   viewBox="0 0 100 100"
+                   preserveAspectRatio="none"
+                   data-color="#3785dd"
+                   data-ymin="0"
+                   data-ymax="400"
+                   data-start="2026-04-21"
+                   data-vals="0.75,0.74,0.75,0.73,0.74,0.72,0.73,0.71,0.72,0.70,0.71,0.70,0.69,0.70,0.68,0.69,0.67,0.68,0.66,0.67,0.65,0.66,0.64,0.65,0.63,0.64,0.63,0.64,0.63,0.63">
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="mclc__divider"></div>
+
+        <!-- ── Row 3: Links (teal) ──────────────────────────────────────── -->
+        <div class="mclc__row">
+          <div class="mclc__kpi" style="color:#36AEBA">
+            <div class="mclc__kpi-inner">
+              <span class="mclc__kpi-label">Links</span>
+              <span class="mclc__kpi-value">73</span>
+              <span class="mclc__kpi-delta mclc__kpi-delta--down">-5%</span>
+            </div>
+          </div>
+          <div class="mclc__chart">
+            <div class="mclc__y-labels">
+              <span>100</span>
+              <span>0</span>
+            </div>
+            <div class="mclc__canvas-wrap">
+              <div class="mclc__bands">
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+                <div class="mclc__band"></div>
+              </div>
+              <svg class="mclc__svg"
+                   viewBox="0 0 100 100"
+                   preserveAspectRatio="none"
+                   data-color="#36AEBA"
+                   data-ymin="0"
+                   data-ymax="100"
+                   data-start="2026-04-21"
+                   data-vals="0.77,0.76,0.77,0.75,0.76,0.74,0.75,0.74,0.74,0.73,0.74,0.73,0.72,0.73,0.72,0.72,0.73,0.72,0.71,0.72,0.71,0.72,0.73,0.72,0.73,0.73,0.73,0.73,0.73,0.73">
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── X-axis date labels ────────────────────────────────────────── -->
+        <!--
+          The spacers (.mclc__x-kpi-spacer, .mclc__x-y-spacer) mirror the widths
+          of the KPI tile and the widest y-axis label so dates align with the canvas.
+          Set the x-y-spacer text to the widest y-axis value in your dataset.
+        -->
+        <div class="mclc__x-axis">
+          <div class="mclc__x-kpi-spacer"></div>
+          <div class="mclc__x-chart">
+            <span class="mclc__x-y-spacer">800</span>
+            <div class="mclc__x-labels">
+              <span class="mclc__x-label">21 Apr, 2026</span>
+              <span class="mclc__x-label">28 Apr, 2026</span>
+              <span class="mclc__x-label">5 May, 2026</span>
+              <span class="mclc__x-label">12 May, 2026</span>
+              <span class="mclc__x-label">19 May, 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="multi-chart-lines.js"></script>
+</body>
+</html>
